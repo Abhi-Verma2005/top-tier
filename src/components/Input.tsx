@@ -1,16 +1,24 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { GitGraphIcon, User } from "lucide-react";
 
 function Input() {
   const [isFocused, setIsFocused] = useState(false);
+  const textAreaRef = useRef<HTMLTextAreaElement>(null)
+  const handleInput = () => {
+    const textArea = textAreaRef.current
+    //@ts-expect-error: no need here.
+    textArea.style.height = "auto"; // Reset height
+    //@ts-expect-error: no need here.
+    textArea.style.height = `${Math.min(textArea.scrollHeight, 150)}px`;
+
+  }
 
   return (
     <div
       className={`fixed left-1/2 transform rounded-lg md:rounded-2xl -translate-x-1/2 w-3xl p-[2px] border-[3px] border-transparent bg-clip-padding bg-[#0f172a] 
       transition-all duration-500 ease-in-out 
-      ${isFocused ? "bottom-0 h-28" : "bottom-60 h-28"}`}
+      ${isFocused ? "bottom-0" : "bottom-60"}`}
     >
-      {/* Gradient Border Layer */}
       <div 
         className={`absolute inset-0 rounded-lg md:rounded-2xl border-[3px] border-transparent transition-all duration-300 
         ${isFocused 
@@ -21,13 +29,15 @@ function Input() {
       {/* Input Container */}
       <div className="relative w-full h-full rounded-2xl bg-[#0a0b0e] p-3 flex flex-col">
         <textarea
-          className="w-full text-2xl text-white/60 placeholder:text-white/60 outline-none focus:ring-0 focus:border-transparent bg-transparent resize-none transition-all duration-500 ease-in-out"
+          ref={textAreaRef}
+          className="w-full text-2xl h-12 text-white/60 placeholder:text-white/60 outline-none focus:ring-0 focus:border-transparent bg-transparent resize-none transition-all duration-500 ease-in-out"
           placeholder="Message M1"
-          rows={2}
+          rows={1}
+          onInput={handleInput}
           onFocus={() => setIsFocused(true)} // Move to bottom on focus
           onBlur={() => setIsFocused(false)} // Move back when clicking elsewhere
         />
-        <div className="flex mt-auto">
+        <div className="flex mt-auto py-1">
           <GitGraphIcon className="text-white/85 mx-1 size-5" />
           <User className="text-white/85 mx-1 size-5" />
         </div>

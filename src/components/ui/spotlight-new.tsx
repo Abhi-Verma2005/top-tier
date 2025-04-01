@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 // Spotlight component
 export const Spotlight = ({
-  gradientFirst = `radial-gradient(68.54% 68.72% at 55.02% 31.46%, rgba(42, 93, 114, 0.2) 0, rgba(42, 93, 114, 0.05) 60%, rgba(42, 93, 114, 0) 95%)`,
+  gradientFirst = `radial-gradient(68.54% 68.72% at 55.02% 31.46%, rgba(42, 93, 114, 0.2) 0, rgba(42, 93, 114, 0.01) 60%, rgba(42, 93, 114, 0) 95%)`,
   gradientSecond = `radial-gradient(50% 50% at 50% 50%, rgba(42, 93, 114, 0.06) 0, rgba(42, 93, 114, 0.02) 80%, transparent 100%)`,
   gradientThird = `radial-gradient(50% 50% at 50% 50%, rgba(42, 93, 114, 0.04) 0, rgba(42, 93, 114, 0.02) 80%, transparent 100%)`,
   translateY = -350,

@@ -1,8 +1,9 @@
 import React, { useRef, useState } from "react";
 import { GitGraphIcon, User } from "lucide-react";
+import useFocusStore from "@/store/focusStore";
 
 function Input() {
-  const [isFocused, setIsFocused] = useState(false);
+  const { isFocused, setIsFocused } = useFocusStore()
   const textAreaRef = useRef<HTMLTextAreaElement>(null)
   const handleInput = () => {
     const textArea = textAreaRef.current
@@ -26,7 +27,6 @@ function Input() {
           : "bg-gradient-to-r from-[#0d2a38] via-[#2a5169] to-[#0d2a38]"}`} 
       />
 
-      {/* Input Container */}
       <div className="relative w-full h-full rounded-2xl bg-[#0a0b0e] p-3 flex flex-col">
         <textarea
           ref={textAreaRef}
@@ -34,8 +34,8 @@ function Input() {
           placeholder="Message M1"
           rows={1}
           onInput={handleInput}
-          onFocus={() => setIsFocused(true)} // Move to bottom on focus
-          onBlur={() => setIsFocused(false)} // Move back when clicking elsewhere
+          onFocus={() => setIsFocused(true)} 
+          onBlur={() => setIsFocused(false)} 
         />
         <div className="flex mt-auto py-1">
           <GitGraphIcon className="text-white/85 mx-1 size-5" />

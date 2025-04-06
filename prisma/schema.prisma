@@ -15,9 +15,9 @@ model User {
   password                  String 
   section                   String
   rollNumber                String   
-  rank                      String    
-  githubUsername            String          @unique
-  projectRating             Int
+  rank                      Int             @default(0)    
+  githubUsername            String?         @unique
+  projectRating             Int?            
   leetcodeUsername          String          @unique
   codeforcesUsername        String          @unique
   projects                  Project[]
@@ -28,7 +28,7 @@ model Project {
   title                     String
   description               String       
   projectUrl                String
-  liveLink                  String
+  liveLink                  String          
   userId                    String
   user                      User            @relation(fields: [userId], references: [id])
 }

@@ -51,7 +51,7 @@ export const authOptions: AuthOptions = {
     signIn: "/auth/signin",
   },
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ account }) {
 
       if (account?.provider === "google") {
         try {

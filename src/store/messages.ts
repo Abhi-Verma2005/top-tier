@@ -23,7 +23,6 @@ interface MessageState {
   sendMessage: () => Promise<void>;
   handleAIResponse: (userMessage: string) => Promise<void>;
   latestAIMessageId: string | null;
-  setLatestAIMessageId: (id: string | null) => void;
   sendToGeminiStream: (userMessage: string) => Promise<void>
 }
 const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
@@ -105,7 +104,6 @@ const useMessageStore = create<MessageState>((set, get) => ({
   isFocused: false,
   setIsFocused: (focused) => set({ isFocused: focused }),
   latestAIMessageId: null,
-  setLatestAIMessageId: (id) => set({ latestAIMessageId: id }),
 
   sendMessage: async () => {
     const { input, setInput, handleAIResponse } = get();
@@ -117,7 +115,7 @@ const useMessageStore = create<MessageState>((set, get) => ({
   },
 
   handleAIResponse: async (userMessage: string) => {
-    const { addMessage, setIsLoading, setLatestAIMessageId, sendToGeminiStream } = get();
+    const { addMessage, setIsLoading, sendToGeminiStream } = get();
 
     if (!userMessage.trim()) return;
 

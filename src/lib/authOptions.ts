@@ -55,15 +55,6 @@ export const authOptions: AuthOptions = {
 
       if (account?.provider === "google") {
         try {
-          const existingUser = await prisma.user.findUnique({
-            where: { email: user.email! },
-          });
-
-          if (!existingUser?.isComplete) {
-            console.log("Redirecting user to complete signup...");
-            return `/auth/signup?email=${encodeURIComponent(user.email!)}`;
-          }
-
           console.log("User successfully signed in.");
           return true;
         } catch (error) {
@@ -74,7 +65,6 @@ export const authOptions: AuthOptions = {
 
       return true;
     },
-
 
 
     async session({ session }: { session: Session }) {
@@ -91,7 +81,6 @@ export const authOptions: AuthOptions = {
             user: {
               ...session.user,
               id: dbUser.id,
-              isComplete: dbUser.isComplete,
             },
           };
         }

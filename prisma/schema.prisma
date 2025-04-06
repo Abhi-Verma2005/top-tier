@@ -22,6 +22,8 @@ model User {
   codeforcesUsername        String          @unique
   projects                  Project[]
 }
+
+//
  
 model Project {
   id                        String          @id @default(uuid())

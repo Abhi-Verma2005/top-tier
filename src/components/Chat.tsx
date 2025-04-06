@@ -41,7 +41,6 @@ const ChatComponent: React.FC = () => {
 
   return (
     <div className="flex mt-24 flex-col w-full h-[90vh] pb-28 max-w-[70%] mx-auto relative">
-      {/* Messages area */}
       <div className="flex-1 p-4 pb-24 overflow-y-auto relative">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-400">
@@ -76,12 +75,10 @@ const ChatComponent: React.FC = () => {
                     </span>
                   </div>
                   
-                  {/* Message Text */}
                   <div className="w-full p-3">
                     <div className="whitespace-pre-wrap">{message.text}</div>
                   </div>
     
-                  {/* Copy Button */}
                   <button 
                     className="absolute bottom-2 right-2 p-1 rounded-md text-gray-400 hover:text-blue-300 transition-all"
                     onClick={() => copyToClipboard(message.text, message.id)}

@@ -1,8 +1,6 @@
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 import { GitGraphIcon, User } from "lucide-react";
-import useInputStore from "@/store/messages";
 import useMessageStore from "@/store/messages";
-import { Button } from "./ui/button";
 
 function Input() {
   const { input, setInput, sendMessage, isFocused, setIsFocused } = useMessageStore()

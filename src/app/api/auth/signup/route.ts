@@ -27,7 +27,6 @@ export async function POST(req: Request) {
 
       const hashedPassword = await bcrypt.hash(request.password, 10);
       
-      // Wrap database operations in a try-catch block
       try {
         const existingUser = await prisma.user.findUnique({
           where: { email: request.email },
@@ -44,6 +43,7 @@ export async function POST(req: Request) {
           data: {
             username: request.username,
             email: request.email,
+            isComplete: true,
             password: hashedPassword,
             leetcodeUsername: request.leetcodeUsername,
             codeforcesUsername: request.codeforcesUsername,
@@ -52,6 +52,8 @@ export async function POST(req: Request) {
             
           },
         });
+
+        console.log("user: ", user)
 
         return NextResponse.json({ user }, { status: 200 });
       } catch (dbError) {

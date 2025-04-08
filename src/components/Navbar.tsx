@@ -28,13 +28,14 @@ import {
 import { Cover } from './ui/cover';
 import { Spotlight } from '@/components/ui/spotlight-new';
 import useMessageStore from '@/store/messages';
+import useTokenStore from '@/store/token';
 
 const Navbar = () => {
   const router = useRouter();
   const { status } = useSession();
   const [username, setUsername] = useState('');
   const { setIsFocused } = useMessageStore()
-  const [token, setToken] = useState<string | null>(null);
+  const { token, setToken } = useTokenStore()
 
   useEffect(() => {
     const checkIfAdmin = async () => {
@@ -61,11 +62,9 @@ const Navbar = () => {
     }
   }, []);
 
-  // Removed Home and Teams from navigation items
   const navigationItems = [
-    { href: '/leaderboard/user', label: 'Leaderboard', icon: Trophy, color: 'text-yellow-400' },
+    { href: `/chat/${token ? 'true/' + token : 'false'} `, label: 'Chat', icon: Trophy, color: 'text-yellow-400' },
     { href: '/arena', label: 'Arena', icon: Swords, color: 'text-red-400' },
-    { href: '/contestsPage', label: 'Contests', icon: LucideSword, color: 'text-cyan-400' }
   ];
 
   const handleSignOut = async (e: React.SyntheticEvent) => {

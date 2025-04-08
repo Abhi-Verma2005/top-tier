@@ -5,14 +5,20 @@ import Image from 'next/image';
 import gemini from '@/images/google-gemini-icon.svg'; 
 import useMessageStore from '@/store/messages';
 import toast from 'react-hot-toast';
+import ProjectSubmissionForm from './Forms/ProjectForm';
+import { useParams } from 'next/navigation';
+import useTokenStore from '@/store/token';
 
 const ChatComponent: React.FC = () => {
   const { 
     messages, 
     isLoading,
+    isFocused,
   } = useMessageStore();
+  const { setToken, token } = useTokenStore()
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const params = useParams()
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   
   useEffect(() => {
@@ -22,6 +28,20 @@ const ChatComponent: React.FC = () => {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
   };
+
+  useEffect(() => {
+    const token = localStorage.getItem('githubAccessToken')
+    if(!token){
+      if(!params) return 
+      if(!params.check) return 
+      if(!params.check[0]) return 
+      localStorage.setItem('githubAccessToken', params.check[1])
+    } else {
+      setToken(token)
+    }
+  }, [])
+
+
   
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -106,6 +126,7 @@ const ChatComponent: React.FC = () => {
           </div>
         </div>
       )}
+      {isFocused && <ProjectSubmissionForm/>}
         
         <div ref={messagesEndRef} />
       </div>

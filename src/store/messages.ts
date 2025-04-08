@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { v4 as uuidv4 } from 'uuid'; 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-interface Message {
+export interface Message {
   id: string;
   text: string;
   sender: 'ai' | 'user';

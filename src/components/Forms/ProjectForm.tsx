@@ -5,7 +5,6 @@ import { ProjectorIcon, X, Github, Globe, Code, FileText, CheckCircle } from 'lu
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { Button } from '../ui/button';
-import ThinkingLoader from '../ThinkingLoader';
 import useTokenStore from '@/store/token';
 import useMessageStore, { Message } from '@/store/messages';
 import { Octokit } from '@octokit/core';
@@ -42,6 +41,8 @@ const ProjectSubmissionForm: React.FC = () => {
     challengesFaced: ''
   });
 
+  
+
   const getRepos = async () => {
     try {
       setIsLoadingRepos(true);    
@@ -77,11 +78,37 @@ const ProjectSubmissionForm: React.FC = () => {
     const octokit = new Octokit({
       auth: token
     });
-  
+
+    async function getRepoStructure(owner: string, repo: string, path = "") {
+      const response = await octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
+        owner,
+        repo,
+        path,
+        headers: {
+          'X-GitHub-Api-Version': '2022-11-28'
+        }
+      })
+
+      console.log(response.data)
+
+    
+      const content = Array.isArray(response.data) ? response.data : [response.data];
+    
+      return content.map(item => ({
+        name: item.name,
+        type: item.type, 
+        path: item.path,
+      }));
+    }
+
+
+    
     if(!githubUsername) {
       toast.error('Github Username Not Found')
       return 
     }
+
+    console.log(getRepoStructure(githubUsername, selectedRepo, 'src'))
   
     let formattedMessage = `
     GitHub Repository: ${projectDetails.githubUrl}
@@ -128,7 +155,7 @@ const ProjectSubmissionForm: React.FC = () => {
     addMessage(userMessage);
     
     const initialAiMessage: Message = {
-      id: (Date.now() + 1).toString(),
+      id: (Date.now() + 2).toString(),
       text: "Thanks for submitting your project details! I'll analyze your repository and provide feedback shortly.",
       sender: 'ai',
       timestamp: new Date(),
@@ -137,36 +164,23 @@ const ProjectSubmissionForm: React.FC = () => {
     addMessage(initialAiMessage);
   
     setIsLoading(true);
-  
+
     try {
-      const response = await axios.post("/api/geminiRate", {
-        formattedMessage
-      }, { timeout: 25000 });
-  
-      const aiMessage: Message = {
-        id: (Date.now() + 2).toString(),
-        text: response.data.insights || "AI response error!",
+      const instruction = 'You will be given a formatted message which will have details of users development projects your task is to rate them on following criterias, 1. Project description use case of project 2. Advance tech stack they used 3. Knowledge and details in the problem they faced 4. Guess the language and quality of code from the given code context example and judge and rate, do remmeber these are uses who have started coding and dev 7 month ago and in the college only frontend till react is taught anything other than this is there effort, give a complete nice rating and be concise dont give too long explanations one to two lines for each criteria is good and end the answer with final rating out of 100 the formatted message starts after colon: '
+      await sendToGeminiStream(instruction + formattedMessage)
+    } catch (error) {
+      console.error('AI Response Error:', error);
+      addMessage({
         sender: 'ai',
-        timestamp: new Date(),
+        text: "Sorry, I encountered an error processing your request.",
         isCode: false
-      };
-  
-      addMessage(aiMessage)
-  
-    } catch(error) {
-      console.error('Error while getting rating from ai: ', error);
-      const errorMessage: Message = {
-        id: Date.now().toString(),
-        text: "Sorry, I encountered an error while analyzing your project. Please try again later.",
-        sender: 'ai',
-        timestamp: new Date(),
-        isCode: false
-      };
-      addMessage(errorMessage);
-    } finally {
+      });
       setIsLoading(false);
     }
+  
   };
+
+
 
   const modalOpen = () => {
     setShowModal(true);
@@ -221,8 +235,6 @@ const ProjectSubmissionForm: React.FC = () => {
   return (
     <>
       {triggerButton}
-      
-      {isLoading && <ThinkingLoader />}
       
 
       {showModal && (

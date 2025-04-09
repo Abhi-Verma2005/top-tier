@@ -47,6 +47,13 @@ const useMessageStore = create<MessageState>((set, get) => ({
   
 
     try {
+      function beautifyPlainText(text: string): string {
+        // Remove **bold** markers
+        let clean = text.replace(/\*\*(.*?)\*\*/g, '$1');
+        // Remove *italic* markers
+        clean = clean.replace(/\*(.*?)\*/g, '$1');
+        return clean;
+      }
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
       const responseStream = await model.generateContentStream(userMessage);
   
@@ -56,7 +63,7 @@ const useMessageStore = create<MessageState>((set, get) => ({
         set((state) => {
           const updatedMessages = state.messages.map(msg => {
             if (msg.id === state.currentStreamingMessage) {
-              return { ...msg, text: msg.text + textChunk };
+              return { ...msg, text: msg.text + beautifyPlainText(textChunk) };
             }
             return msg;
           });
@@ -126,8 +133,6 @@ const useMessageStore = create<MessageState>((set, get) => ({
     });
 
     setIsLoading(true);
-
-
 
     try {
       await sendToGeminiStream(userMessage)

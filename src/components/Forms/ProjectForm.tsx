@@ -8,6 +8,7 @@ import { Button } from '../ui/button';
 import useTokenStore from '@/store/token';
 import useMessageStore, { Message } from '@/store/messages';
 import { Octokit } from '@octokit/core';
+import { getRepoStructure } from '@/lib/rateFunctions';
 
 interface ProjectDetails {
   githubUrl: string;
@@ -79,36 +80,15 @@ const ProjectSubmissionForm: React.FC = () => {
       auth: token
     });
 
-    async function getRepoStructure(owner: string, repo: string, path = "") {
-      const response = await octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
-        owner,
-        repo,
-        path,
-        headers: {
-          'X-GitHub-Api-Version': '2022-11-28'
-        }
-      })
-
-      console.log(response.data)
-
-    
-      const content = Array.isArray(response.data) ? response.data : [response.data];
-    
-      return content.map(item => ({
-        name: item.name,
-        type: item.type, 
-        path: item.path,
-      }));
-    }
-
-
     
     if(!githubUsername) {
       toast.error('Github Username Not Found')
       return 
     }
+    
+    const response = await getRepoStructure(githubUsername, selectedRepo, '', token)
 
-    console.log(getRepoStructure(githubUsername, selectedRepo, 'src'))
+    console.log(response)
   
     let formattedMessage = `
     GitHub Repository: ${projectDetails.githubUrl}

@@ -15,7 +15,7 @@ const ChatComponent: React.FC = () => {
     isLoading,
     isFocused,
   } = useMessageStore();
-  const { setToken, token } = useTokenStore()
+  const { setToken } = useTokenStore()
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const params = useParams()

@@ -33,7 +33,6 @@ const useMessageStore = create<MessageState>((set, get) => ({
   ) => {
   
   
-    // Create an initial empty AI message
     const aiMessageId = Date.now() + 1 + '';
     set((state) => ({
       messages: [...state.messages, {
@@ -48,9 +47,9 @@ const useMessageStore = create<MessageState>((set, get) => ({
 
     try {
       function beautifyPlainText(text: string): string {
-        // Remove **bold** markers
+
         let clean = text.replace(/\*\*(.*?)\*\*/g, '$1');
-        // Remove *italic* markers
+
         clean = clean.replace(/\*(.*?)\*/g, '$1');
         return clean;
       }
@@ -73,7 +72,7 @@ const useMessageStore = create<MessageState>((set, get) => ({
       }
     } catch (error) {
       console.error("Streaming error:", error);
-      // Handle error - append error message
+
       set((state) => {
         const updatedMessages = state.messages.map(msg => {
           if (msg.id === state.currentStreamingMessage) {
@@ -85,7 +84,6 @@ const useMessageStore = create<MessageState>((set, get) => ({
         return { messages: updatedMessages };
       });
     } finally {
-      // Clear loading and streaming states
       set({ isLoading: false, currentStreamingMessage: null });
     }
   },

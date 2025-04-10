@@ -3,6 +3,7 @@
 import { LeetCode } from "leetcode-query";
 import { CodeforcesAPI } from "codeforces-api-ts";
 import axios from "axios";
+import { Octokit } from "@octokit/core";
 
 
 export async function fetchLatestSubmissionsLeetCode(username: string){
@@ -18,6 +19,28 @@ export async function fetchLatestSubmissionsLeetCode(username: string){
 
 } 
 
+export async function getFile(token: string, owner: string, repo: string, path: string){
+    try {
+      const octokit = new Octokit({
+        auth: token
+      })
+      const response = await octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
+        owner,
+        repo,
+        path,
+        headers: {
+          'X-GitHub-Api-Version': '2022-11-28'
+        }
+      });
+      //@ts-expect-error: no need here
+      const content = Buffer.from(response.data.content, 'base64').toString('utf8');
+      return content
+    } catch (error) {
+      console.error(`Error fetching file content: ${error}`);
+      return 'nothing'
+    }
+
+}
 
 export async function fetchLatestSubmissionsCodeForces(username: string){
     

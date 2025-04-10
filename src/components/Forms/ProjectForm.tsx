@@ -9,6 +9,7 @@ import useTokenStore from '@/store/token';
 import useMessageStore, { Message } from '@/store/messages';
 import { Octokit } from '@octokit/core';
 import { getRepoStructure } from '@/lib/rateFunctions';
+import { getFile } from '@/serverActions/fetch';
 
 interface ProjectDetails {
   githubUrl: string;
@@ -75,11 +76,6 @@ const ProjectSubmissionForm: React.FC = () => {
 
   const handleProjectSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-  
-    const octokit = new Octokit({
-      auth: token
-    });
-
     
     if(!githubUsername) {
       toast.error('Github Username Not Found')
@@ -88,7 +84,7 @@ const ProjectSubmissionForm: React.FC = () => {
     
     const response = await getRepoStructure(githubUsername, selectedRepo, '', token)
 
-    console.log(response)
+    // console.log(response)
   
     let formattedMessage = `
     GitHub Repository: ${projectDetails.githubUrl}
@@ -98,19 +94,8 @@ const ProjectSubmissionForm: React.FC = () => {
     Description: ${projectDetails.description}
         `.trim();
   
-    try {
-      const response = await octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
-        owner: githubUsername,
-        repo: selectedRepo,
-        path: projectDetails.filePath,
-        headers: {
-          'X-GitHub-Api-Version': '2022-11-28'
-        }
-      });
-
-      //@ts-expect-error: no need here
-      const content = Buffer.from(response.data.content, 'base64').toString('utf8');
-      setProjectDetails({...projectDetails, demoCode: content})
+    const content = await getFile(token, githubUsername, selectedRepo, projectDetails.filePath)
+    setProjectDetails({...projectDetails, demoCode: content})
       formattedMessage = `
     GitHub Repository: ${projectDetails.githubUrl}
     Tech Stack: ${projectDetails.techStack}
@@ -119,9 +104,6 @@ const ProjectSubmissionForm: React.FC = () => {
     Description: ${projectDetails.description}
     Demo Code: ${content}
         `.trim();
-    } catch (error) {
-      console.error(`Error fetching file content: ${error}`);
-    }
     
     setShowModal(false);
   
@@ -147,7 +129,7 @@ const ProjectSubmissionForm: React.FC = () => {
 
     try {
       const instruction = 'You will be given a formatted message which will have details of users development projects your task is to rate them on following criterias, 1. Project description use case of project 2. Advance tech stack they used 3. Knowledge and details in the problem they faced 4. Guess the language and quality of code from the given code context example and judge and rate, do remmeber these are uses who have started coding and dev 7 month ago and in the college only frontend till react is taught anything other than this is there effort, give a complete nice rating and be concise dont give too long explanations one to two lines for each criteria is good and end the answer with final rating out of 100 the formatted message starts after colon: '
-      await sendToGeminiStream(instruction + formattedMessage)
+      // await sendToGeminiStream(instruction + formattedMessage)
     } catch (error) {
       console.error('AI Response Error:', error);
       addMessage({
@@ -156,6 +138,8 @@ const ProjectSubmissionForm: React.FC = () => {
         isCode: false
       });
       setIsLoading(false);
+    } finally {
+      setIsLoading(false)
     }
   
   };

@@ -244,6 +244,8 @@ const ProjectSubmissionForm: React.FC = () => {
     }
   };
 
+  // 
+
   const connect = () => {
     toast((t) => (
       <div className="flex flex-col text-white bg-gray-800 p-2 rounded-lg">

@@ -247,7 +247,7 @@ const ProjectSubmissionForm: React.FC = () => {
   const connect = () => {
     toast((t) => (
       <div className="flex flex-col text-white bg-gray-800 p-2 rounded-lg">
-        <p className="font-semibold">Your Github isn't connected</p>
+        <p className="font-semibold">Your Github is not connected</p>
         <div className="flex gap-2 mt-2 justify-center">
           <button 
             onClick={() => {

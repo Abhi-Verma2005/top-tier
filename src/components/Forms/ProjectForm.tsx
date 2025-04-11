@@ -8,7 +8,7 @@ import { Button } from '../ui/button';
 import useTokenStore from '@/store/token';
 import useMessageStore, { Message } from '@/store/messages';
 import { Octokit } from '@octokit/core';
-import { getRepoStructure } from '@/lib/rateFunctions';
+import { getPageSpeedScore, getRelevantFoldersFromAi } from '@/lib/rateFunctions';
 import { getFile } from '@/serverActions/fetch';
 
 interface ProjectDetails {
@@ -18,13 +18,12 @@ interface ProjectDetails {
   demoUrl: string;
   description: string;
   demoCode: string;
-  filePath: string;
   teamMembers: string;
   challengesFaced: string;
 }
 
 const ProjectSubmissionForm: React.FC = () => {
-  const [showModal, setShowModal] = useState(false);
+  const { showModal, setShowModal } = useMessageStore();
   const { addMessage, sendMessage, isLoading, setIsLoading, sendToGeminiStream } = useMessageStore()
   const [repos, setRepos] = useState<string[]>([]);
   const [isLoadingRepos, setIsLoadingRepos] = useState(false);
@@ -37,7 +36,6 @@ const ProjectSubmissionForm: React.FC = () => {
     projectType: '',
     demoUrl: '',
     description: '',
-    filePath: '',
     teamMembers: '',
     demoCode: '',
     challengesFaced: ''
@@ -76,60 +74,150 @@ const ProjectSubmissionForm: React.FC = () => {
 
   const handleProjectSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if(!githubUsername) {
-      toast.error('Github Username Not Found')
-      return 
+    const toastId = toast.loading('Zero is analyzing your project...', {
+      duration: Infinity, 
+    });
+
+    const updateProgress = (message: string) => {
+      toast.loading(message, { id: toastId })
+
     }
     
-    const response = await getRepoStructure(githubUsername, selectedRepo, '', token)
-
-    // console.log(response)
-  
-    let formattedMessage = `
-    GitHub Repository: ${projectDetails.githubUrl}
-    Tech Stack: ${projectDetails.techStack}
-    Project Type: ${projectDetails.projectType}
-    Live Demo: ${projectDetails.demoUrl}
-    Description: ${projectDetails.description}
-        `.trim();
-  
-    const content = await getFile(token, githubUsername, selectedRepo, projectDetails.filePath)
-    setProjectDetails({...projectDetails, demoCode: content})
-      formattedMessage = `
-    GitHub Repository: ${projectDetails.githubUrl}
-    Tech Stack: ${projectDetails.techStack}
-    Project Type: ${projectDetails.projectType}
-    Live Demo: ${projectDetails.demoUrl}
-    Description: ${projectDetails.description}
-    Demo Code: ${content}
-        `.trim();
+    async function getRepoStructure(owner: string, repo: string, path: string, token: string) {
+      let result: string[] = []
+      let count = 0
+      const func = async (owner: string, repo: string, path: string, token: string) => {
     
+        if(count > 5){
+          return ''
+        }
+        
+        count += 1
+        
+        try {
+          const octokit = new Octokit({
+            auth: token
+          });
+    
+        const response = await octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
+          owner,
+          repo,
+          path: path || '',
+          headers: {
+            'X-GitHub-Api-Version': '2022-11-28'
+          }
+        })
+      
+        const content = Array.isArray(response.data) ? response.data : [response.data];
+    
+        const inputForAi = content.map((cont) => cont.name)
+    
+        const folders = await getRelevantFoldersFromAi(inputForAi)
+    
+        const cleaned = folders
+        .replace("```json", "")
+        .replace("```", "")
+        .trim();
+    
+        const obj = JSON.parse(cleaned);
+    
+    
+        for (const file of obj.relevantFiles) { 
+          const filed = await getFile(token, owner, repo, path + '/' + file)
+          updateProgress(`Found ${file}`)
+          result.push('File Name: ' + file + " " + filed)  
+        }
+    
+        for (const folder of obj.relevantFolders){
+          updateProgress(`Looking into ${folder}...`)
+          await func(owner, repo, path + '/' + folder, token)
+        }
+    
+        return content.map(item => ({
+          name: item.name,
+          type: item.type, 
+          path: item.path,
+        }));
+      } catch(error) {
+        console.error('Error in recursive function: ', error)
+      } 
+        }
+      await func(owner, repo, path, token)
+      
+      return result.join('/n') 
+    }
     setShowModal(false);
-  
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      text: formattedMessage,
-      sender: 'user',
-      timestamp: new Date(),
-      isCode: false
-    };
-    addMessage(userMessage);
-    
-    const initialAiMessage: Message = {
-      id: (Date.now() + 2).toString(),
-      text: "Thanks for submitting your project details! I'll analyze your repository and provide feedback shortly.",
-      sender: 'ai',
-      timestamp: new Date(),
-      isCode: false
-    };
-    addMessage(initialAiMessage);
-  
-    setIsLoading(true);
-
     try {
-      const instruction = 'You will be given a formatted message which will have details of users development projects your task is to rate them on following criterias, 1. Project description use case of project 2. Advance tech stack they used 3. Knowledge and details in the problem they faced 4. Guess the language and quality of code from the given code context example and judge and rate, do remmeber these are uses who have started coding and dev 7 month ago and in the college only frontend till react is taught anything other than this is there effort, give a complete nice rating and be concise dont give too long explanations one to two lines for each criteria is good and end the answer with final rating out of 100 the formatted message starts after colon: '
-      // await sendToGeminiStream(instruction + formattedMessage)
+      setIsLoading(true);
+    
+      if(!githubUsername) {
+        toast.error('Github Username Not Found')
+        toast.dismiss(toastId)
+        return 
+      }
+
+      updateProgress("Analyzing repo structure...")
+      
+      const response = await getRepoStructure(githubUsername, selectedRepo, '', token)
+
+      updateProgress("Getting deployed link performance...")
+
+      const pageData = await getPageSpeedScore(projectDetails.demoUrl)
+
+      if(pageData === ''){
+        updateProgress("Page data coudn't be fetched")
+      } else {
+        updateProgress("Page data fetched")
+      }
+
+    
+      let formattedMessage = `
+      GitHub Repository: ${projectDetails.githubUrl}
+      Tech Stack: ${projectDetails.techStack}
+      Project Type: ${projectDetails.projectType}
+      Live Demo: ${pageData}
+      Description: ${projectDetails.description}
+          `.trim();
+    
+      setProjectDetails({...projectDetails, demoCode: response})
+        formattedMessage = `
+      GitHub Repository: ${projectDetails.githubUrl}
+      Tech Stack: ${projectDetails.techStack}
+      Project Type: ${projectDetails.projectType}
+      Live Demo: ${pageData}
+      Description: ${projectDetails.description}
+      Demo Code: ${response}
+          `.trim();
+    
+      const userString = `
+      GitHub Repository: ${projectDetails.githubUrl}
+      Tech Stack: ${projectDetails.techStack}
+      Project Type: ${projectDetails.projectType}
+      Live Demo: ${pageData}
+      Description: ${projectDetails.description}
+      Demo Code: Analyzed
+          `.trim();
+    
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        text: userString,
+        sender: 'user',
+        timestamp: new Date(),
+        isCode: false
+      };
+      addMessage(userMessage);
+      
+      const initialAiMessage: Message = {
+        id: (Date.now() + 2).toString(),
+        text: "Thanks for submitting your project details! I'll analyze your repository and provide feedback shortly.",
+        sender: 'ai',
+        timestamp: new Date(),
+        isCode: false
+      };
+      addMessage(initialAiMessage);
+      updateProgress("Zero is analyzing your project...")
+      const instruction = 'You will be given a formatted message which will have details of users development projects your task is to rate them on following criterias, 1. Project description use case of project 2. Advance tech stack they used 3. Knowledge and details in the problem they faced 4. Guess the language and quality of code from the given code context example and judge and rate, 5. Performace of deployed link if not provided minus some points also justify the reason in the explaination why you rated so in short do remmeber these are uses who have started coding and dev 7 month ago and in the college only frontend till react is taught anything other than this is there effort, give a complete nice rating and be concise dont give too long explanations one to two lines for each criteria is good and end the answer with final rating out of 100 the formatted message starts after colon: '
+      await sendToGeminiStream(instruction + formattedMessage)
     } catch (error) {
       console.error('AI Response Error:', error);
       addMessage({
@@ -140,15 +228,11 @@ const ProjectSubmissionForm: React.FC = () => {
       setIsLoading(false);
     } finally {
       setIsLoading(false)
+      toast.dismiss(toastId)
     }
   
   };
 
-
-
-  const modalOpen = () => {
-    setShowModal(true);
-  };
 
   const connectGithub = async () => {
     try {
@@ -186,20 +270,9 @@ const ProjectSubmissionForm: React.FC = () => {
   };
 
 
-  const triggerButton = (
-    <Button 
-      onClick={modalOpen}
-      className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-6 py-3 shadow-lg shadow-blue-500/20"
-    >
-      <ProjectorIcon size={20} />
-      Submit Project
-    </Button>
-  );
 
   return (
     <>
-      {triggerButton}
-      
 
       {showModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -298,20 +371,6 @@ const ProjectSubmissionForm: React.FC = () => {
                     />
                   </div>
                   
-                  <div>
-                    <label className="text-sm font-medium text-gray-300 mb-1 flex items-center">
-                      <Code size={16} className="mr-2 text-gray-400" />
-                      Main File Path <span className="text-red-400 ml-1">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm text-white"
-                      placeholder="/src/index.js"
-                      value={projectDetails.filePath}
-                      onChange={(e) => setProjectDetails({...projectDetails, filePath: e.target.value})}
-                    />
-                  </div>
                   
                   <div>
                     <label className="text-sm font-medium text-gray-300 mb-1 flex items-center">

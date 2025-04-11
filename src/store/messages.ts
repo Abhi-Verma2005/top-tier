@@ -15,6 +15,8 @@ interface MessageState {
   addMessage: (message: Partial<Message>) => Message;
   input: string;
   setInput: (text: string) => void;
+  showModal: boolean
+  setShowModal: (value: boolean) => void
   isFocused: boolean;
   setIsFocused: (value: boolean) => void;
   isLoading: boolean;
@@ -88,6 +90,8 @@ const useMessageStore = create<MessageState>((set, get) => ({
     }
   },
   messages: [],
+  showModal: false,
+  setShowModal: (value: boolean) => set({ showModal: value }),
   currentStreamingMessage: null,
   addMessage: (messageData: Partial<Message>) => {
     const message: Message = {

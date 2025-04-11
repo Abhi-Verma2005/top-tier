@@ -2,12 +2,13 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Check, Clipboard, User } from 'lucide-react';
 import Image from 'next/image';
-import gemini from '@/images/google-gemini-icon.svg'; 
+import gemini from '@/images/zero.png'; 
 import useMessageStore from '@/store/messages';
 import toast from 'react-hot-toast';
 import ProjectSubmissionForm from './Forms/ProjectForm';
 import { useParams } from 'next/navigation';
 import useTokenStore from '@/store/token';
+import ZeroLoader from './ZeroLoader';
 
 const ChatComponent: React.FC = () => {
   const { 
@@ -64,9 +65,10 @@ const ChatComponent: React.FC = () => {
       <div className="flex-1 p-4 pb-24 overflow-y-auto relative">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-400">
-            <p className="text-center">Chat/Rate with</p>
+            <p className="text-center">Rate with</p>
             <span className='flex items-center justify-center'>
-              <Image src={gemini} alt='gemini' className='size-8'/>Gemini
+              {isLoading &&  <ZeroLoader isPlaying={false}/>}
+              {!isLoading &&  <ZeroLoader/>}
             </span>
           </div>
         ) : (
@@ -86,12 +88,12 @@ const ChatComponent: React.FC = () => {
                 <div className="flex flex-col w-full">
                   <div className="flex items-center mb-1">
                     {message.sender === 'ai' ? (
-                      <Image src={gemini} alt='gemini' className='size-5'/>
+                      <Image src={gemini} alt='gemini' className='size-5 rounded-lg'/>
                     ) : (
                       <User size={16} className="mr-1 text-blue-400" />
                     )}
                     <span className="text-xs opacity-70 mx-1">
-                      {message.sender === 'ai' ? 'Gemini' : 'You'} • {formatTime(message.timestamp)}
+                      {message.sender === 'ai' ? 'Zero' : 'You'} • {formatTime(message.timestamp)}
                     </span>
                   </div>
                   
@@ -120,16 +122,16 @@ const ChatComponent: React.FC = () => {
             <div className="flex items-center space-x-2">
               <Image src={gemini} alt="gemini" className="size-5" />
               <p className="text-xl font-semibold text-transparent bg-clip-text bg-[linear-gradient(to_right,#333_0%,#888_50%,#333_100%)] bg-[length:200%_100%] animate-[shimmer_1.5s_infinite_linear]">
-                Thinking
+                Zero is Thinking
               </p>
             </div>
           </div>
         </div>
       )}
-      {isFocused && <ProjectSubmissionForm/>}
         
         <div ref={messagesEndRef} />
       </div>
+      {isFocused && <ProjectSubmissionForm />}
       
     </div>
   );

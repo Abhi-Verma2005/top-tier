@@ -12,7 +12,7 @@ export default function Chat() {
   const Router = useRouter()
   const { status } = useSession()
   const words = ["Rankings", "Competition", "Achievements", "Growth", "Skill Mastery"];
-  const { isFocused, setIsFocused } = useMessageStore()
+  const { isFocused } = useMessageStore()
 
   useEffect(() => {
     if (status === 'unauthenticated') {

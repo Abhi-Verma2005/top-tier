@@ -22,8 +22,7 @@ import {
   Settings,
   ShieldCheck,
   ChartNoAxesColumnIcon,
-  UserCog, 
-  LucideSword
+  UserCog
 } from 'lucide-react';
 import { Cover } from './ui/cover';
 import { Spotlight } from '@/components/ui/spotlight-new';

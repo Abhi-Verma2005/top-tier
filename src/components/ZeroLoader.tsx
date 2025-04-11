@@ -23,8 +23,7 @@ const ZeroLoader: React.FC<ZeroLoaderProps> = ({
   showControls = false,
   onTogglePlay
 }) => {
-  // When not playing, we'll show the full logo by setting strokeDashoffset to 0
-  const strokeDashoffset = isPlaying ? "600" : "0";
+
 
   const handleTogglePlay = () => {
     if (onTogglePlay) {

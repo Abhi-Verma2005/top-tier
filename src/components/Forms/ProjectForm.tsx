@@ -84,7 +84,7 @@ const ProjectSubmissionForm: React.FC = () => {
     }
     
     async function getRepoStructure(owner: string, repo: string, path: string, token: string) {
-      let result: string[] = []
+      const result: string[] = []
       let count = 0
       const func = async (owner: string, repo: string, path: string, token: string) => {
     
@@ -215,8 +215,10 @@ const ProjectSubmissionForm: React.FC = () => {
         isCode: false
       };
       addMessage(initialAiMessage);
+
       updateProgress("Zero is analyzing your project...")
-      const instruction = 'You will be given a formatted message which will have details of users development projects your task is to rate them on following criterias, 1. Project description use case of project 2. Advance tech stack they used 3. Knowledge and details in the problem they faced 4. Guess the language and quality of code from the given code context example and judge and rate, 5. Performace of deployed link if not provided minus some points also justify the reason in the explaination why you rated so in short do remmeber these are uses who have started coding and dev 7 month ago and in the college only frontend till react is taught anything other than this is there effort, give a complete nice rating and be concise dont give too long explanations one to two lines for each criteria is good and end the answer with final rating out of 100 the formatted message starts after colon: '
+
+      const instruction = "You are an expert developer and reviewer. You will be given a formatted message containing a user's self-submitted development project overview, which may include their description, code snippet, deployment link, and more. Your job is to objectively rate their project based on the following criteria:\n\n1. Project Use Case & Description – Is the idea clear, relevant, and useful? Does it solve a real problem or offer value?\n2. Tech Stack Used – Identify if advanced technologies are used beyond what’s taught in college (i.e., React frontend only). Reward extra effort like backend, TypeScript, databases, WebSockets, etc.\n3. Problem Solving Depth – Look at how the user describes issues they faced and how they solved them. Reward logical debugging and architecture decisions.\n4. Code Insight & Quality – Analyze any code snippet shared. Judge the language, structure, modularity, use of modern practices, naming, and quality. Don’t rely only on their claims—verify from the code.\n5. Performance & Hosting – If a deployed link is provided, judge the performance via tools (or estimate if needed). If not provided, deduct a few points but justify it gently, especially if the project is backend-only or in early stages.\n\n📌 Important Notes:\n- If the user provides only backend code, do not penalize for missing frontend and vice versa.\n- Reward projects fairly based on the effort visible in the code and description, not just based on their claims.\n- If a person claims to have used something (e.g., AI, Web3), but you don’t find it reflected in code or stack clearly, be skeptical and mention it.\n- These users have been coding for only 7 months and most are college students who have officially learned only frontend up to React. So any other tech (e.g., Node.js, MongoDB, TypeScript, Next.js, Web3) is learned by them voluntarily—appreciate it appropriately.\n\nYour response must be concise: 1-2 lines per criteria. End with a final rating out of 100.\n\nThe formatted project description starts after this colon:";
       await sendToGeminiStream(instruction + formattedMessage)
     } catch (error) {
       console.error('AI Response Error:', error);

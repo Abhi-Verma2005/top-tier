@@ -8,7 +8,7 @@ import { Button } from '../ui/button';
 import useTokenStore from '@/store/token';
 import useMessageStore, { Message } from '@/store/messages';
 import { Octokit } from '@octokit/core';
-import { getPageSpeedScore, getRelevantFoldersFromAi } from '@/lib/rateFunctions';
+import { getRelevantFoldersFromAi } from '@/lib/rateFunctions';
 import { getFile } from '@/serverActions/fetch';
 
 interface ProjectDetails {

@@ -162,20 +162,19 @@ const ProjectSubmissionForm: React.FC = () => {
 
       updateProgress("Getting deployed link performance...")
 
-      const pageData = await getPageSpeedScore(projectDetails.demoUrl)
+      // const pageData = await getPageSpeedScore(projectDetails.demoUrl)
 
-      if(pageData === ''){
-        updateProgress("Page data coudn't be fetched")
-      } else {
-        updateProgress("Page data fetched")
-      }
+      // if(pageData === ''){
+      //   updateProgress("Page data coudn't be fetched")
+      // } else {
+      //   updateProgress("Page data fetched")
+      // }
 
     
       let formattedMessage = `
       GitHub Repository: ${projectDetails.githubUrl}
       Tech Stack: ${projectDetails.techStack}
       Project Type: ${projectDetails.projectType}
-      Live Demo: ${pageData}
       Description: ${projectDetails.description}
           `.trim();
     
@@ -184,7 +183,6 @@ const ProjectSubmissionForm: React.FC = () => {
       GitHub Repository: ${projectDetails.githubUrl}
       Tech Stack: ${projectDetails.techStack}
       Project Type: ${projectDetails.projectType}
-      Live Demo: ${pageData}
       Description: ${projectDetails.description}
       Demo Code: ${response}
           `.trim();
@@ -193,7 +191,6 @@ const ProjectSubmissionForm: React.FC = () => {
       GitHub Repository: ${projectDetails.githubUrl}
       Tech Stack: ${projectDetails.techStack}
       Project Type: ${projectDetails.projectType}
-      Live Demo: ${pageData}
       Description: ${projectDetails.description}
       Demo Code: Analyzed
           `.trim();
@@ -218,7 +215,7 @@ const ProjectSubmissionForm: React.FC = () => {
 
       updateProgress("Zero is analyzing your project...")
 
-      const instruction = "You are an expert full-stack developer and brutally honest reviewer. You will receive a formatted message describing a user's dev project — this may include code snippets, project explanation, tech stack used, deployed link, and more. Your task is to analyze it deeply and rate it based on the following criteria:\n\n1. 🧠 Project Use Case – Is the idea actually solving a real problem or is it just a to-do list clone in disguise? Be blunt.\n2. 🔧 Tech Stack Used – Go beyond what they *say* they used. If they mention something fancy (e.g., Web3, AI, Redis), but you don’t see actual usage or code context, call it out. Give credit where it’s due for using anything beyond React frontend (e.g., backend, auth, database, cloud infra, advanced libs).\n3. 🧩 Problem Solving & Depth – Evaluate how well they understood the issues faced during development. If they barely scratched the surface or used 10 libraries for a 2-line task, roast gently.\n4. 💻 Code Quality & Language – Analyze code snippets. Judge actual quality: naming, structure, modularity, modern practices, and avoid blindly trusting what they claim. If it’s messy or copy-pasted spaghetti code, say it.\n5. ⚡ Performance & Hosting – If a deployed link is available, consider performance issues (slow load, layout shifts, etc.). If not provided, minus a few points but explain appropriately (e.g., backend-only, or still in dev).\n\n🔥 Bonus Rules:\n- Be honest, even if it stings. These users can take it.\n- If the project is all fluff and no real build, call it out.\n- If it’s actually impressive for a 7-month dev journey, praise it with proper respect.\n- College students usually only know frontend up to React — appreciate any real effort shown in backend, devops, design systems, Web3, TypeScript, testing, etc.\n\nKeep your responses concise but packed with value. Use 1–2 lines per criteria. End with a short verdict and a final score out of 100.\n\nThe formatted project description starts after this colon:";
+      const instruction = "You are an expert full-stack developer and brutally honest reviewer. You will receive a formatted message describing a user's dev project — this may include code snippets, project explanation, tech stack used, deployed link, and more. Your task is to analyze it deeply and rate it based on the following criteria:\n\n1. 🧠 Project Use Case – Is the idea actually solving a real problem or is it just a to-do list clone in disguise? Be blunt.\n2. 🔧 Tech Stack Used – Go beyond what they *say* they used. If they mention something fancy (e.g., Web3, AI, Redis), but you don’t see actual usage or code context, call it out. Give credit where it’s due for using anything beyond React frontend (e.g., backend, auth, database, cloud infra, advanced libs).\n3. 🧩 Problem Solving & Depth – Evaluate how well they understood the issues faced during development. If they barely scratched the surface or used 10 libraries for a 2-line task, roast gently.\n4. 💻 Code Quality & Language – Analyze code snippets. Judge actual quality: naming, structure, modularity, modern practices, and avoid blindly trusting what they claim. If it’s messy or copy-pasted spaghetti code, say it.\n5. Explain appropriately (e.g., backend-only, or still in dev).\n\n🔥 Bonus Rules:\n- Be honest, even if it stings. These users can take it.\n- If the project is all fluff and no real build, call it out.\n- If it’s actually impressive for a 7-month dev journey, praise it with proper respect.\n- College students usually only know frontend up to React — appreciate any real effort shown in backend, devops, design systems, Web3, TypeScript, testing, etc.\n\nKeep your responses concise but packed with value. Use 1–2 lines per criteria. End with a short verdict and a final score out of 100.\n\nThe formatted project description starts after this colon:";
       await sendToGeminiStream(instruction + formattedMessage)
     } catch (error) {
       console.error('AI Response Error:', error);
@@ -244,7 +241,6 @@ const ProjectSubmissionForm: React.FC = () => {
     }
   };
 
-  // 
 
   const connect = () => {
     toast((t) => (

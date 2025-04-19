@@ -64,12 +64,14 @@ export default function SignIn() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-black/[0.96] antialiased bg-grid-white/[0.02] flex items-center justify-center p-4 relative overflow-hidden">
+      
+      
       <Toaster position="top-center" />
       
-      <div className="w-full max-w-md">
-        <Card className="bg-white shadow-md border-gray-100">
-          <CardHeader className="text-center pb-2 border-b border-gray-100">
+      <div className="w-full max-w-md relative z-10">
+        <Card className="bg-white/5 backdrop-blur-lg border border-white/10 shadow-xl">
+          <CardHeader className="text-center pb-2 border-b border-white/10">
             <div className="mx-auto mb-4">
               <Image 
                 src={img3} 
@@ -79,16 +81,16 @@ export default function SignIn() {
                 className="mx-auto"
               />
             </div>
-            <CardTitle className="text-2xl font-bold text-gray-800">
-              Enter & Explore
+            <CardTitle className="text-2xl font-bold -skew-x-12 bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400">
+              Enter & Explore <span className="text-[#2a5d75]">TopTier</span>
             </CardTitle>
           </CardHeader>
           
           <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="username" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                  <User className="h-4 w-4 text-indigo-500" />
+                <Label htmlFor="username" className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                  <User className="h-4 w-4 text-[#2a5d75]" />
                   Username
                 </Label>
                 <Input
@@ -98,14 +100,14 @@ export default function SignIn() {
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter username"
                   disabled={isLoading}
-                  className="border-gray-200 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                  className="border-white/10 bg-white/5 text-white focus:border-[#2a5d75] focus:ring focus:ring-[#2a5d75] focus:ring-opacity-50"
                   required
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                  <Lock className="h-4 w-4 text-indigo-500" />
+                <Label htmlFor="password" className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                  <Lock className="h-4 w-4 text-[#2a5d75]" />
                   Password
                 </Label>
                 <Input
@@ -115,14 +117,14 @@ export default function SignIn() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password"
                   disabled={isLoading}
-                  className="border-gray-200 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                  className="border-white/10 bg-white/5 text-white focus:border-[#2a5d75] focus:ring focus:ring-[#2a5d75] focus:ring-opacity-50"
                   required
                 />
               </div>
 
               <Button 
                 type="submit" 
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium flex items-center justify-center gap-2"
+                className="w-full bg-[#2a5d75] hover:bg-[#1d4254] text-white font-medium flex items-center justify-center gap-2"
                 disabled={isLoading}
               >
                 {isLoading ? 'Signing in...' : 'Sign In'}
@@ -132,17 +134,17 @@ export default function SignIn() {
             
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
+                <div className="w-full border-t border-white/10"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">OR</span>
+                <span className="px-2 bg-black/50 text-gray-400">OR</span>
               </div>
             </div>
             
             <Button 
               type="button" 
               onClick={handleGoogleSignIn}
-              className="w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium flex items-center justify-center gap-2"
+              className="w-full bg-white/5 border border-white/10 hover:bg-white/10 text-gray-300 font-medium flex items-center justify-center gap-2 transition-colors"
               disabled={isLoading}
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24px" height="24px">

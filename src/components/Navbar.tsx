@@ -14,15 +14,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { 
-  Trophy, 
-  Brain,
-  Swords, 
-  Info,
   LogOut, 
   Settings,
-  ShieldCheck,
-  ChartNoAxesColumnIcon,
-  UserCog
+  ArrowDown,
+  FolderOpen,
+  MessageCircle
 } from 'lucide-react';
 import { Cover } from './ui/cover';
 import { Spotlight } from '@/components/ui/spotlight-new';
@@ -31,26 +27,25 @@ import useTokenStore from '@/store/token';
 
 const Navbar = () => {
   const router = useRouter();
-  const { status } = useSession();
+  const { data:session, status } = useSession();
   const [username, setUsername] = useState('');
   const { setIsFocused } = useMessageStore()
   const { token, setToken } = useTokenStore()
 
   useEffect(() => {
-    const checkIfAdmin = async () => {
+    const checkUsername = async () => {
       try {
-        const [usernameResponse] = await Promise.all([
-          axios.post('/api/getUsername')
-        ]);
-        
-        setUsername(usernameResponse.data.username);
+        const usernameResponse =  session?.user.email.split('.')[0].toUpperCase()
+        if(usernameResponse){
+          setUsername(usernameResponse);
+        }
       } catch (error) {
-        console.error('Error fetching user data:', error);
+        console.error('Error fetching username:', error);
       }
     };
 
     if (status === 'authenticated') {
-      checkIfAdmin();
+      checkUsername();
     }
   }, [status]);
   
@@ -60,11 +55,6 @@ const Navbar = () => {
       setToken(accessToken)
     }
   }, []);
-
-  const navigationItems = [
-    { href: `/chat/${token ? 'true/' + token : 'false'} `, label: 'Chat', icon: Trophy, color: 'text-yellow-400' },
-    { href: '/arena', label: 'Arena', icon: Swords, color: 'text-red-400' },
-  ];
 
   const handleSignOut = async (e: React.SyntheticEvent) => {
     e.preventDefault();
@@ -76,12 +66,16 @@ const Navbar = () => {
     }
   };
 
+  const navigateToProjects = () => {
+    router.push('/projects');
+  };
+
   return (
     <nav className="fixed top-0 left-0 w-full h-16 z-50 flex items-center justify-between px-4 md:px-8 bg-transparent">
       <div className="flex items-center space-x-4 relative">
         <Link href={'/'}>
           <div className="relative">
-            <h1 onClick={() => setIsFocused(false)} className="text-2xl font-bold md:text-3xl lg:text-3xl -skew-x-12 max-w-7xl text-center relative z-20 p-1 bg-clip-text text-transparent bg-gradient-to-b from-neutral-300 via-white to-neutral-300 dark:from-neutral-300 dark:via-white dark:to-neutral-300">
+            <h1 onClick={() => setIsFocused(false)} className="text-2xl font-bold md:text-3xl lg:text-3xl -skew-x-12 max-w-7xl text-center relative z-20 p-1 bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400">
               <Cover>TopTier<span className="text-[#2a5d75]">.dev</span></Cover>
             </h1>
             <div className="absolute inset-0 -z-10 opacity-40">
@@ -93,22 +87,24 @@ const Navbar = () => {
 
       {status === 'authenticated' ? (
         <div className="flex items-center space-x-2 md:space-x-4">
-          <div className="hidden md:flex items-center space-x-1">
-            {navigationItems.map((item) => (
-              <Link key={item.href} href={item.href}>
-                <Button variant="ghost" className="flex items-center space-x-1 hover:bg-white/5 text-neutral-200 hover:text-white transition-colors">
-                  <item.icon className={`h-4 w-4 ${item.color}`} />
-                  <span className="font-medium">{item.label}</span>
-                </Button>
-              </Link>
-            ))}
-          </div>
+          <Link 
+            href={!token ? `/chat/false` : `/chat/true/${token}`}
+            className="mr-2"
+          >
+            <Button 
+              variant="outline" 
+              className="border-white/10 hover:bg-white/5 hover:border-white/20 flex items-center gap-2 px-3 text-neutral-200"
+            >
+              <MessageCircle className="h-4 w-4" />
+              <span className="hidden sm:inline-block">Chat</span>
+            </Button>
+          </Link>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="border-white/10 hover:bg-white/5 hover:border-white/20 flex items-center gap-2 px-3 text-neutral-200">
-                  <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-indigo-800 rounded-full flex items-center justify-center text-white font-medium">
+                  <div className="h-8 w-8 bg-gradient-to-r from-[#2a5d75] to-[#1d4254] rounded-full flex items-center justify-center text-white font-medium">
                     {username?.charAt(0)?.toUpperCase() || "U"}
                   </div>
                   <span className="text-sm font-medium hidden sm:inline-block">
@@ -125,55 +121,15 @@ const Navbar = () => {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-white/10" />
                 
-                <div className="md:hidden py-1">
-                  {navigationItems.map((item) => (
-                    <Link key={item.href} href={item.href}>
-                      <DropdownMenuItem className="px-3 py-2 hover:bg-white/5 cursor-pointer text-neutral-300">
-                        <item.icon className={`mr-2 h-4 w-4 ${item.color}`} />
-                        <span>{item.label}</span>
-                      </DropdownMenuItem>
-                    </Link>
-                  ))}
-                  <DropdownMenuSeparator className="bg-white/10" />
-                </div>
-
-                {true && (
-                  <>
-                    <Link href="/admin/dashboard">
-                      <DropdownMenuItem className="px-3 py-2 hover:bg-white/5 cursor-pointer text-neutral-300">
-                        <ShieldCheck className="mr-2 h-4 w-4 text-blue-400" />
-                        <span>Admin Dashboard</span>
-                      </DropdownMenuItem>
-                    </Link>
-                    <Link href="/admin/Stats">
-                      <DropdownMenuItem className="px-3 py-2 hover:bg-white/5 cursor-pointer text-neutral-300">
-                        <ChartNoAxesColumnIcon className="mr-2 h-4 w-4 text-teal-400" />
-                        <span>Stats</span>
-                      </DropdownMenuItem>
-                    </Link>
-                   
-                    <DropdownMenuSeparator className="bg-white/10" />
-                  </>
-                )}
-                 <Link href={token ? '/chat/true' : '/chat/false'}>
-                      <DropdownMenuItem className="px-3 py-2 hover:bg-white/5 cursor-pointer text-neutral-300">
-                        <Brain className="mr-2 h-4 w-4 text-purple-400" />
-                        <span>Chat/Rate with Gemini</span>
-                      </DropdownMenuItem>
-                    </Link>
-                    <Link href='/about'>
-                      <DropdownMenuItem className="px-3 py-2 hover:bg-white/5 cursor-pointer text-neutral-300">
-                        <Info className="mr-2 h-4 w-4 text-cyan-400" />
-                        <span>About AlgoJourney</span>
-                      </DropdownMenuItem>
-                    </Link>
+                <DropdownMenuItem 
+                  className="px-3 py-2 hover:bg-white/5 cursor-pointer" 
+                  onClick={navigateToProjects}
+                >
+                  <FolderOpen className="mr-2 h-4 w-4 text-neutral-300" />
+                  <span className="text-neutral-200 font-medium">My Projects</span>
+                </DropdownMenuItem>
                 
-                <Link href={`/user/updateProfile/${username}`}>
-                  <DropdownMenuItem className="px-3 py-2 hover:bg-white/5 cursor-pointer text-neutral-300">
-                    <UserCog className="mr-2 h-4 w-4 text-neutral-400" />
-                    <span>Profile</span>
-                  </DropdownMenuItem>
-                </Link>
+                <DropdownMenuSeparator className="bg-white/10" />
                 
                 <DropdownMenuItem 
                   className="px-3 py-2 hover:bg-red-900/20 cursor-pointer" 
@@ -188,14 +144,28 @@ const Navbar = () => {
           </div>
         </div>
       ) : (
-        <Button 
-          variant="default" 
-          onClick={() => signIn()} 
-          className="bg-gradient-to-r from-blue-600 to-indigo-800 hover:from-blue-700 hover:to-indigo-900 text-white shadow-md transition-all flex items-center space-x-2"
-        >
-          <Settings className="h-4 w-4" />
-          <span>Sign In</span>
-        </Button>
+        <div className="flex items-center space-x-2">
+          <Link 
+            href={!token ? `/chat/false` : `/chat/true/${token}`}
+          >
+            <Button 
+              variant="outline" 
+              className="border-white/10 hover:bg-white/5 hover:border-white/20 flex items-center gap-2 px-3 text-neutral-200"
+            >
+              <MessageCircle className="h-4 w-4" />
+              <span>Chat</span>
+            </Button>
+          </Link>
+          
+          <Button 
+            variant="default" 
+            onClick={() => signIn()} 
+            className="bg-[#2a5d75] hover:bg-[#1d4254] text-white shadow-md transition-all flex items-center space-x-2"
+          >
+            <Settings className="h-4 w-4" />
+            <span>Sign In</span>
+          </Button>
+        </div>
       )}
     </nav>
   );

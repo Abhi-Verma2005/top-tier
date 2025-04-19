@@ -45,11 +45,9 @@ export async function POST(req: Request) {
             email: request.email,
             isComplete: true,
             password: hashedPassword,
-            leetcodeUsername: request.leetcodeUsername,
-            codeforcesUsername: request.codeforcesUsername,
+            githubUsername: request.githubUsername,
             rollNumber: request.enrollmentNum,
             section: request.section,
-            
           },
         });
 

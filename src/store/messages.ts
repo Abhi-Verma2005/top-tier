@@ -25,66 +25,73 @@ interface MessageState {
   sendMessage: () => Promise<void>;
   handleAIResponse: (userMessage: string) => Promise<void>;
   latestAIMessageId: string | null;
-  sendToGeminiStream: (userMessage: string) => Promise<void>
+  sendToGeminiStream: (userMessage: string) => Promise<string>
 }
 const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
 const useMessageStore = create<MessageState>((set, get) => ({
   
-  sendToGeminiStream: async  (
-    userMessage: string,
-  ) => {
-  
-  
+  sendToGeminiStream: async (userMessage: string) => {
     const aiMessageId = Date.now() + 1 + '';
+    let fullText = '';
+  
     set((state) => ({
-      messages: [...state.messages, {
-        id: aiMessageId,
-        text: '',
-        sender: 'ai',
-        timestamp: new Date()
-      }],
+      messages: [
+        ...state.messages,
+        {
+          id: aiMessageId,
+          text: '',
+          sender: 'ai',
+          timestamp: new Date()
+        }
+      ],
       currentStreamingMessage: aiMessageId
     }));
   
-
     try {
       function beautifyPlainText(text: string): string {
-
         let clean = text.replace(/\*\*(.*?)\*\*/g, '$1');
-
         clean = clean.replace(/\*(.*?)\*/g, '$1');
         return clean;
       }
+  
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
       const responseStream = await model.generateContentStream(userMessage);
   
       for await (const chunk of responseStream.stream) {
-        const textChunk = chunk.text();
-        
+        const textChunk = beautifyPlainText(chunk.text());
+        fullText += textChunk;
+  
         set((state) => {
           const updatedMessages = state.messages.map(msg => {
             if (msg.id === state.currentStreamingMessage) {
-              return { ...msg, text: msg.text + beautifyPlainText(textChunk) };
+              return { ...msg, text: msg.text + textChunk };
             }
             return msg;
           });
-          
+  
           return { messages: updatedMessages };
         });
       }
+  
+      return fullText;
+  
     } catch (error) {
       console.error("Streaming error:", error);
-
+  
+      const errorMessage = "Error: Could not process your request.";
       set((state) => {
         const updatedMessages = state.messages.map(msg => {
           if (msg.id === state.currentStreamingMessage) {
-            return { ...msg, text: "Error: Could not process your request." };
+            return { ...msg, text: errorMessage };
           }
           return msg;
         });
-        
+  
         return { messages: updatedMessages };
       });
+  
+      return errorMessage;
+  
     } finally {
       set({ isLoading: false, currentStreamingMessage: null });
     }

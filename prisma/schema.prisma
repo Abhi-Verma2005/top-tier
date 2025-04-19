@@ -15,22 +15,20 @@ model User {
   email                     String          @unique
   password                  String 
   section                   String
-  rollNumber                String   
-  rank                      Int             @default(0)    
+  rollNumber                String     
   githubUsername            String?         @unique
-  projectRating             Int?            
-  leetcodeUsername          String          @unique
-  codeforcesUsername        String          @unique
   projects                  Project[]
 }
 
  
 model Project {
   id                        String          @id @default(uuid())
-  title                     String
-  description               String       
-  projectUrl                String
-  liveLink                  String          
-  userId                    String
+  title                     String          @unique
+  githubLink                String          @unique
+  deployedLink              String          @unique
+  feedback                  String?
+  rating                    String?            
+  userId                    String          
   user                      User            @relation(fields: [userId], references: [id])
 }
+

@@ -80,6 +80,7 @@ function Input() {
         {/* Toolbar */}
         <div className="flex items-center mt-2 px-1">
           <div className="flex items-center space-x-1">
+
             <button onClick={()=>{
               const token = localStorage.getItem('githubAccessToken')
               if(token){
@@ -89,14 +90,8 @@ function Input() {
                 toast.error('Token not found, first connect your github')
                 connect()
               }
-            }} className="p-1 rounded-md text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all">
-              <GitGraphIcon className="size-4" />
-            </button>
-            <button className="p-1 rounded-md text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all">
-              <User className="size-4" />
-            </button>
-            <button className="p-1 rounded-md text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all">
-              <Paperclip className="size-4" />
+            }} className="p-1 flex justify-center items-center rounded-md text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all">
+              <span className="mx-1">Rate</span><GitGraphIcon className="size-4" />
             </button>
           </div>
           

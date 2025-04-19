@@ -33,10 +33,8 @@ import { Eye, EyeOff, UserPlus } from "lucide-react";
 import toast from "react-hot-toast";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from 'next/image'
-import { fetchLatestSubmissionsCodeForces, fetchLatestSubmissionsLeetCode } from "@/serverActions/fetch";
 
-// Validation schema remains the same
+// Updated validation schema with GitHub username
 const signupSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
   email: z.string().email("Invalid email").refine(
@@ -48,10 +46,9 @@ const signupSchema = z.object({
     .regex(/[A-Z]/, "Must contain at least one uppercase letter")
     .regex(/[a-z]/, "Must contain at least one lowercase letter")
     .regex(/[0-9]/, "Must contain at least one number"),
-  leetcodeUsername: z.string().min(1, "Leetcode username is required"),
-  codeforcesUsername: z.string().min(1, "Codeforces username is required"),
   enrollmentNum: z.string().min(1, "Enrollment number is required"),
-  section: z.enum(['A', 'B', 'C', 'D', 'E'])
+  section: z.enum(['A', 'B', 'C', 'D', 'E']),
+  githubUsername: z.string().min(1, "GitHub username is required")
 });
 
 type SignupFormData = z.infer<typeof signupSchema>;
@@ -70,20 +67,15 @@ export default function Signup() {
       username: "",
       email: email ?? '',
       password: "",
-      leetcodeUsername: "",
-      codeforcesUsername: "",
       enrollmentNum: "",
-      section: undefined
+      section: undefined,
+      githubUsername: ""
     }
   });
 
   const onSubmit = async (data: SignupFormData) => {
     setIsSubmitting(true);
     try {
-      const checkLeet = await fetchLatestSubmissionsLeetCode(data.leetcodeUsername)
-      if(!checkLeet) return toast.error("Invalid Leetcode Username")
-      const checkCodeforces = await fetchLatestSubmissionsCodeForces(data.codeforcesUsername)
-      if(!checkCodeforces) return toast.error("Invalid Codeforces Username")
       const signupResponse = await axios.post("/api/auth/signup", data, {
         headers: { "Content-Type": "application/json" }
       });
@@ -106,178 +98,168 @@ export default function Signup() {
   }
 
   return (
-    <div className="flex min-h-screen p-10">
-      <div className="hidden lg:flex items-center justify-center flex-1 bg-gray-50">
-        <div className="max-w-2xl px-8">
-          <Image
-            src={img2}
-            alt="Login Page"
-            width={700}
-            height={700}
-            className="object-contain"
-          />
-        </div>
-      </div>
-      <div className="flex flex-1 items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-center gap-2">
-              <UserPlus className="w-6 h-6" />
-              Create Your Account
-            </CardTitle>
-            <CardDescription className="text-center">
-              Join our platform with your college credentials
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="username"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Username</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Choose a unique username" 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+    <div className="min-h-screen bg-black/[0.96] antialiased bg-grid-white/[0.02] relative overflow-hidden">
 
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>College Email</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field} 
-                          disabled
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <div className="relative">
+      <div className="flex min-h-screen p-4 md:p-10 relative z-10">
+        
+        <div className="flex flex-1 items-center justify-center p-4">
+          <Card className="w-full max-w-md bg-white/5 backdrop-blur-lg border border-white/10 shadow-xl">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-center gap-2 -skew-x-12 bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400">
+                <UserPlus className="w-6 h-6 text-[#2a5d75]" />
+                Join <span className="text-[#2a5d75]">TopTier.dev</span>
+              </CardTitle>
+              <CardDescription className="text-center text-gray-400">
+                Create your account with your college credentials
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-300">Username</FormLabel>
+                        <FormControl>
                           <Input 
-                            type={isPasswordVisible ? "text" : "password"}
-                            placeholder="Strong password" 
+                            placeholder="Choose a unique username" 
+                            className="border-white/10 bg-white/5 text-white focus:border-[#2a5d75] focus:ring focus:ring-[#2a5d75] focus:ring-opacity-50"
                             {...field} 
                           />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-1 top-1/2 -translate-y-1/2"
-                            onClick={() => setIsPasswordVisible(!isPasswordVisible)}
-                          >
-                            {isPasswordVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        </FormControl>
+                        <FormMessage className="text-red-400" />
+                      </FormItem>
+                    )}
+                  />
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="leetcodeUsername"
+                    name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Leetcode Username</FormLabel>
+                        <FormLabel className="text-gray-300">College Email</FormLabel>
                         <FormControl>
-                          <Input placeholder="Leetcode profile" {...field} />
+                          <Input
+                            className="border-white/10 bg-white/5 text-gray-400 focus:border-[#2a5d75] focus:ring focus:ring-[#2a5d75] focus:ring-opacity-50"
+                            {...field} 
+                            disabled
+                          />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="text-red-400" />
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="codeforcesUsername"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Codeforces Username</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Codeforces profile" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="enrollmentNum"
+                    name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Enrollment Number</FormLabel>
+                        <FormLabel className="text-gray-300">Password</FormLabel>
                         <FormControl>
-                          <Input placeholder="College ID" {...field} />
+                          <div className="relative">
+                            <Input 
+                              type={isPasswordVisible ? "text" : "password"}
+                              placeholder="Strong password" 
+                              className="border-white/10 bg-white/5 text-white focus:border-[#2a5d75] focus:ring focus:ring-[#2a5d75] focus:ring-opacity-50"
+                              {...field} 
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                              onClick={() => setIsPasswordVisible(!isPasswordVisible)}
+                            >
+                              {isPasswordVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                          </div>
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="text-red-400" />
                       </FormItem>
                     )}
                   />
+
                   <FormField
                     control={form.control}
-                    name="section"
+                    name="githubUsername"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Section</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          defaultValue={field.value}
-                        >
+                        <FormLabel className="text-gray-300">GitHub Username</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Your GitHub profile" 
+                            className="border-white/10 bg-white/5 text-white focus:border-[#2a5d75] focus:ring focus:ring-[#2a5d75] focus:ring-opacity-50"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage className="text-red-400" />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="enrollmentNum"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-300">Enrollment Number</FormLabel>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select Section" />
-                            </SelectTrigger>
+                            <Input 
+                              placeholder="College ID" 
+                              className="border-white/10 bg-white/5 text-white focus:border-[#2a5d75] focus:ring focus:ring-[#2a5d75] focus:ring-opacity-50"
+                              {...field} 
+                            />
                           </FormControl>
-                          <SelectContent>
-                            {['A', 'B', 'C', 'D', 'E'].map((sec) => (
-                              <SelectItem key={sec} value={sec}>
-                                Section {sec}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                          <FormMessage className="text-red-400" />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="section"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-300">Section</FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="border-white/10 bg-white/5 text-white focus:border-[#2a5d75] focus:ring focus:ring-[#2a5d75] focus:ring-opacity-50">
+                                <SelectValue placeholder="Select Section" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="bg-black/90 border-white/10 text-white">
+                              {['A', 'B', 'C', 'D', 'E'].map((sec) => (
+                                <SelectItem key={sec} value={sec} className="hover:bg-white/10 focus:bg-white/10">
+                                  Section {sec}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage className="text-red-400" />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full bg-indigo-600" 
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Signing Up..." : "Create Account"}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-[#2a5d75] hover:bg-[#1d4254] text-white font-medium"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Creating Account..." : "Join TopTier.dev"}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

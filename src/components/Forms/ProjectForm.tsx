@@ -11,6 +11,7 @@ import { Octokit } from '@octokit/core';
 import { getRelevantFoldersFromAi } from '@/lib/rateFunctions';
 import { getFile } from '@/serverActions/fetch';
 import { connect } from '../Helpers/Fetch';
+import { useSession } from 'next-auth/react';
 
 interface ProjectDetails {
   githubUrl: string;
@@ -26,10 +27,12 @@ interface ProjectDetails {
 const ProjectSubmissionForm: React.FC = () => {
   const { showModal, setShowModal } = useMessageStore();
   const { addMessage, sendMessage, isLoading, setIsLoading, sendToGeminiStream } = useMessageStore()
+  const { data: session } = useSession()
   const [repos, setRepos] = useState<string[]>([]);
   const [isLoadingRepos, setIsLoadingRepos] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState('');
   const [githubUsername, setGithubUsername] = useState<string | null>(null);
+  const [ prevFeed, setPrevFeed ] = useState('')
   const { token } = useTokenStore()
   const [projectDetails, setProjectDetails] = useState<ProjectDetails>({
     githubUrl: '',
@@ -63,7 +66,7 @@ const ProjectSubmissionForm: React.FC = () => {
         setRepos(res.data.repos);
         setGithubUsername(res.data.githubUsername);
       }
-      console.log(res.data.repos, res.data.githubUsername)
+
       
       setIsLoadingRepos(false);
     } catch (error) {
@@ -80,10 +83,9 @@ const ProjectSubmissionForm: React.FC = () => {
     const toastId = toast.loading('Zero is analyzing your project...', {
       duration: Infinity, 
     });
-
+  
     const updateProgress = (message: string) => {
       toast.loading(message, { id: toastId })
-
     }
     
     async function getRepoStructure(owner: string, repo: string, path: string, token: string) {
@@ -151,6 +153,21 @@ const ProjectSubmissionForm: React.FC = () => {
     }
     setShowModal(false);
     try {
+      // Check if project already exists in database
+      try {
+        updateProgress("Checking if project exists in database...")
+        const existingProject = await axios.get(`/api/project/${selectedRepo}`);
+        
+        if (existingProject.status === 200) {
+          updateProgress("Found existing project in database...")
+          setPrevFeed(existingProject.data.project.feedback)
+        }
+        
+      } catch (error) {
+        // Project doesn't exist, continue with submission
+        console.log("Project not found in database, proceeding with analysis");
+      }
+      
       let formattedMessage = `
       GitHub Repository: ${projectDetails.githubUrl}
       Tech Stack: ${projectDetails.techStack}
@@ -173,31 +190,23 @@ const ProjectSubmissionForm: React.FC = () => {
         timestamp: new Date(),
         isCode: false
       };
-
+  
       addMessage(userMessage);
       
       setIsLoading(true);
-
+  
       if(!githubUsername) {
         toast.error('Github Username Not Found')
         toast.dismiss(toastId)
         return 
       }
-
+  
       updateProgress("Analyzing repo structure...")
       
       const response = await getRepoStructure(githubUsername, selectedRepo, '', token)
-
+  
       updateProgress("Getting deployed link performance...")
-
-      // const pageData = await getPageSpeedScore(projectDetails.demoUrl)
-
-      // if(pageData === ''){
-      //   updateProgress("Page data coudn't be fetched")
-      // } else {
-      //   updateProgress("Page data fetched")
-      // }
-
+  
       setProjectDetails({...projectDetails, demoCode: response})
         formattedMessage = `
       GitHub Repository: ${projectDetails.githubUrl}
@@ -206,10 +215,7 @@ const ProjectSubmissionForm: React.FC = () => {
       Description: ${projectDetails.description}
       Demo Code: ${response}
           `.trim();
-
-    
-      
-      
+  
       const initialAiMessage: Message = {
         id: (Date.now() + 2).toString(),
         text: "Thanks for submitting your project details! I'll analyze your repository and provide feedback shortly.",
@@ -218,11 +224,53 @@ const ProjectSubmissionForm: React.FC = () => {
         isCode: false
       };
       addMessage(initialAiMessage);
-
+  
       updateProgress("Zero is analyzing your project...")
+  
+      const instruction = `You are an expert full-stack developer and brutally honest reviewer. You will receive a formatted message describing a user's dev project — this may include code snippets, project explanation, tech stack used, deployed link, and more. Your task is to analyze it deeply and rate it based on the following criteria:\n\n1. 🧠 Project Use Case – Is the idea actually a good decent project or is it just a to-do list clone in disguise? Be blunt still not too strict.\n2. 🔧 Tech Stack Used – Go beyond what they *say* they used. If they mention something fancy (e.g., Web3, AI, Redis), but you don't see actual usage or code context, call it out. Give credit where it's due for using anything beyond React frontend (e.g., backend, auth, database, cloud infra, advanced libs).\n3. 🧩 Problem Solving & Depth – Evaluate how well they understood the issues faced during development. If they barely scratched the surface or used 10 libraries for a 2-line task, roast gently but no need to deduct marks strictly.\n4. 💻 Code Quality & Language – Analyze code snippets. Judge actual quality: naming, structure, modularity, modern practices, and avoid blindly trusting what they claim. If it's messy or copy-pasted spaghetti code, say it.\n5. Explain appropriately (e.g., backend-only, or still in dev).\n\n🔥 Bonus Rules:\n- Be honest, even if it stings. These users can take it.\n- If the project is all fluff and no real build, call it out.\n- If it's actually impressive for a 7-month dev journey, praise it with proper respect.\n- College students usually only know frontend up to React — appreciate any real effort shown in backend, devops, design systems, Web3, TypeScript, testing, etc.\n\nKeep your responses concise but packed with value. Use 1–2 lines per criteria. End with a short verdict and a final score out of 100.\n\n. Also you might get dynamically your only previous response do consider that also and try to be very close to it considering the new analysis ${prevFeed}. Give the Final Rating as "Final Rating: your rating". The formatted project description starts after this colon:`;
+      
+      // Send to Gemini and get feedback
+      const feedback = await sendToGeminiStream(instruction + formattedMessage);
+      
+      // Extract rating from feedback
+      const ratingMatch = feedback.match(/Final Rating:\s*(\d+)/i) || 
+                         feedback.match(/Final Score:\s*(\d+)/i);
+      const rating = ratingMatch ? ratingMatch[1] : null;
+      
+      updateProgress("Saving project to database...");
+      
+    
+      try {
+        const response = await axios.post('/api/project', {
+          githubUrl: projectDetails.githubUrl,
+          techStack: projectDetails.techStack,
+          projectType: projectDetails.projectType,
+          demoUrl: projectDetails.demoUrl,
+          description: projectDetails.description,
+          teamMembers: projectDetails.teamMembers,
+          challengesFaced: projectDetails.challengesFaced,
+          userEmail: session?.user.email,
+          feedback: feedback,
+          rating: rating,
+          title: selectedRepo
+        });
+        
+        if (response.status === 201) {
+          toast.success('Project saved to your portfolio with rating: ' + (rating || 'N/A'));
+        }
+        if (response.status === 200) {
+          toast.success('Project updated with rating: ' + (rating || 'N/A'));
+        }
 
-      const instruction = "You are an expert full-stack developer and brutally honest reviewer. You will receive a formatted message describing a user's dev project — this may include code snippets, project explanation, tech stack used, deployed link, and more. Your task is to analyze it deeply and rate it based on the following criteria:\n\n1. 🧠 Project Use Case – Is the idea actually a good decent project or is it just a to-do list clone in disguise? Be blunt still not too strict.\n2. 🔧 Tech Stack Used – Go beyond what they *say* they used. If they mention something fancy (e.g., Web3, AI, Redis), but you don’t see actual usage or code context, call it out. Give credit where it’s due for using anything beyond React frontend (e.g., backend, auth, database, cloud infra, advanced libs).\n3. 🧩 Problem Solving & Depth – Evaluate how well they understood the issues faced during development. If they barely scratched the surface or used 10 libraries for a 2-line task, roast gently but no need to deduct marks strictly.\n4. 💻 Code Quality & Language – Analyze code snippets. Judge actual quality: naming, structure, modularity, modern practices, and avoid blindly trusting what they claim. If it’s messy or copy-pasted spaghetti code, say it.\n5. Explain appropriately (e.g., backend-only, or still in dev).\n\n🔥 Bonus Rules:\n- Be honest, even if it stings. These users can take it.\n- If the project is all fluff and no real build, call it out.\n- If it’s actually impressive for a 7-month dev journey, praise it with proper respect.\n- College students usually only know frontend up to React — appreciate any real effort shown in backend, devops, design systems, Web3, TypeScript, testing, etc.\n\nKeep your responses concise but packed with value. Use 1–2 lines per criteria. End with a short verdict and a final score out of 100.\n\nThe formatted project description starts after this colon:";
-      await sendToGeminiStream(instruction + formattedMessage)
+      } catch (error) {
+        console.error('Error saving project:', error);
+        //@ts-expect-error: no need here
+        if (error.response?.status === 409) {
+          toast.error('You have already submitted this project');
+        } else {
+          toast.error('Failed to save project to database');
+        }
+      }
     } catch (error) {
       console.error('AI Response Error:', error);
       addMessage({
@@ -235,7 +283,6 @@ const ProjectSubmissionForm: React.FC = () => {
       setIsLoading(false)
       toast.dismiss(toastId)
     }
-  
   };
 
 
@@ -252,19 +299,18 @@ const ProjectSubmissionForm: React.FC = () => {
 
   return (
     <>
-
       {showModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl max-w-md w-full transform transition-all max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-black/[0.96] border border-white/10 rounded-xl shadow-2xl max-w-md w-full transform transition-all max-h-[90vh] overflow-y-auto">
             <div className="p-5">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-medium text-white flex items-center">
-                  <ProjectorIcon className="mr-2 text-blue-400" size={20} />
+                <h1 className="text-xl font-bold -skew-x-12 text-white flex items-center">
+                  <ProjectorIcon className="mr-2 text-[#2a5d75]" size={20} />
                   Submit Your Project
-                </h3>
+                </h1>
                 <button 
                   onClick={() => setShowModal(false)}
-                  className="text-gray-400 hover:text-gray-200 transition-colors"
+                  className="text-gray-400 hover:text-white transition-colors"
                 >
                   <X size={20} />
                 </button>
@@ -274,7 +320,7 @@ const ProjectSubmissionForm: React.FC = () => {
                 <div className="space-y-5">
                   <div>
                     <label className="text-sm font-medium text-gray-300 mb-1 flex items-center">
-                      <Github size={16} className="mr-2 text-gray-400" />
+                      <Github size={16} className="mr-2 text-[#2a5d75]" />
                       GitHub Repository URL <span className="text-red-400 ml-1">*</span>
                     </label>
                     
@@ -282,7 +328,7 @@ const ProjectSubmissionForm: React.FC = () => {
                       <input
                         type="url"
                         required
-                        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm text-white"
+                        className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-[#2a5d75] focus:border-[#2a5d75] text-sm text-white"
                         placeholder="https://github.com/username/repo"
                         value={projectDetails.githubUrl}
                         readOnly
@@ -293,7 +339,7 @@ const ProjectSubmissionForm: React.FC = () => {
                     <div className="flex items-center gap-2 mb-3">
                       <Button 
                         onClick={getRepos} 
-                        className="flex items-center gap-1 bg-gray-800 hover:bg-gray-700 text-white border border-gray-700"
+                        className="flex items-center gap-1 bg-[#2a5d75] hover:bg-[#1d4254] text-white"
                         disabled={isLoadingRepos}
                       >
                         <Github size={16} />
@@ -309,7 +355,7 @@ const ProjectSubmissionForm: React.FC = () => {
                     </div>
                     
                     {repos.length > 0 && (
-                      <div className="border border-gray-700 rounded-lg p-2 max-h-40 overflow-y-auto mb-2">
+                      <div className="border border-white/10 rounded-lg p-2 max-h-40 overflow-y-auto mb-2 bg-white/5 backdrop-blur-lg">
                         <div className="text-sm mb-2 text-gray-400">Select a repository:</div>
                         <div className="grid grid-cols-1 gap-1">
                           {repos.map((repo) => (
@@ -319,14 +365,14 @@ const ProjectSubmissionForm: React.FC = () => {
                               onClick={() => selectRepository(repo)}
                               className={`text-left px-3 py-2 rounded-md text-sm flex items-center ${
                                 selectedRepo === repo
-                                  ? 'bg-blue-900/50 text-blue-300 font-medium'
-                                  : 'hover:bg-gray-800 text-gray-300'
+                                  ? 'bg-[#2a5d75]/50 text-white font-medium'
+                                  : 'hover:bg-white/10 text-gray-300'
                               }`}
                             >
                               <Github size={14} className="mr-2 text-gray-500" />
                               {repo}
                               {selectedRepo === repo && (
-                                <CheckCircle size={14} className="ml-auto text-blue-400" />
+                                <CheckCircle size={14} className="ml-auto text-[#2a5d75]" />
                               )}
                             </button>
                           ))}
@@ -337,29 +383,28 @@ const ProjectSubmissionForm: React.FC = () => {
                   
                   <div>
                     <label className="text-sm font-medium text-gray-300 mb-1 flex items-center">
-                      <Code size={16} className="mr-2 text-gray-400" />
+                      <Code size={16} className="mr-2 text-[#2a5d75]" />
                       Tech Stack <span className="text-red-400 ml-1">*</span>
                     </label>
                     <input
                       type="text"
                       required
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm text-white"
+                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-[#2a5d75] focus:border-[#2a5d75] text-sm text-white"
                       placeholder="Next.js, TailwindCSS, Prisma, PostgreSQL"
                       value={projectDetails.techStack}
                       onChange={(e) => setProjectDetails({...projectDetails, techStack: e.target.value})}
                     />
                   </div>
                   
-                  
                   <div>
                     <label className="text-sm font-medium text-gray-300 mb-1 flex items-center">
-                      <FileText size={16} className="mr-2 text-gray-400" />
+                      <FileText size={16} className="mr-2 text-[#2a5d75]" />
                       Project Type <span className="text-red-400 ml-1">*</span>
                     </label>
                     <input
                       type="text"
                       required
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm text-white"
+                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-[#2a5d75] focus:border-[#2a5d75] text-sm text-white"
                       placeholder="E-commerce, SaaS, Portfolio"
                       value={projectDetails.projectType}
                       onChange={(e) => setProjectDetails({...projectDetails, projectType: e.target.value})}
@@ -368,12 +413,12 @@ const ProjectSubmissionForm: React.FC = () => {
                   
                   <div>
                     <label className="text-sm font-medium text-gray-300 mb-1 flex items-center">
-                      <Globe size={16} className="mr-2 text-gray-400" />
+                      <Globe size={16} className="mr-2 text-[#2a5d75]" />
                       Live Demo URL
                     </label>
                     <input
                       type="url"
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm text-white"
+                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-[#2a5d75] focus:border-[#2a5d75] text-sm text-white"
                       placeholder="https://project.vercel.app"
                       value={projectDetails.demoUrl}
                       onChange={(e) => setProjectDetails({...projectDetails, demoUrl: e.target.value})}
@@ -382,13 +427,13 @@ const ProjectSubmissionForm: React.FC = () => {
                   
                   <div>
                     <label className="text-sm font-medium text-gray-300 mb-1 flex items-center">
-                      <FileText size={16} className="mr-2 text-gray-400" />
+                      <FileText size={16} className="mr-2 text-[#2a5d75]" />
                       Project Description <span className="text-red-400 ml-1">*</span>
                     </label>
                     <textarea
                       required
                       rows={3}
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm resize-none text-white"
+                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-[#2a5d75] focus:border-[#2a5d75] text-sm resize-none text-white"
                       placeholder="A brief description of your project..."
                       value={projectDetails.description}
                       onChange={(e) => setProjectDetails({...projectDetails, description: e.target.value})}
@@ -397,12 +442,12 @@ const ProjectSubmissionForm: React.FC = () => {
                   
                   <div>
                     <label className="text-sm font-medium text-gray-300 mb-1 flex items-center">
-                      <FileText size={16} className="mr-2 text-gray-400" />
+                      <FileText size={16} className="mr-2 text-[#2a5d75]" />
                       Team Members
                     </label>
                     <input
                       type="text"
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm text-white"
+                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-[#2a5d75] focus:border-[#2a5d75] text-sm text-white"
                       placeholder="List team members (or solo project)"
                       value={projectDetails.teamMembers}
                       onChange={(e) => setProjectDetails({...projectDetails, teamMembers: e.target.value})}
@@ -411,12 +456,12 @@ const ProjectSubmissionForm: React.FC = () => {
                   
                   <div>
                     <label className="text-sm font-medium text-gray-300 mb-1 flex items-center">
-                      <FileText size={16} className="mr-2 text-gray-400" />
+                      <FileText size={16} className="mr-2 text-[#2a5d75]" />
                       Challenges Faced
                     </label>
                     <textarea
                       rows={2}
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm resize-none text-white"
+                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-[#2a5d75] focus:border-[#2a5d75] text-sm resize-none text-white"
                       placeholder="Describe challenges you faced during development"
                       value={projectDetails.challengesFaced}
                       onChange={(e) => setProjectDetails({...projectDetails, challengesFaced: e.target.value})}
@@ -428,7 +473,7 @@ const ProjectSubmissionForm: React.FC = () => {
                   <button
                     type="submit"
                     onClick={() => sendMessage()}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center"
+                    className="w-full bg-[#2a5d75] hover:bg-[#1d4254] text-white py-2 px-4 rounded-xl transition-colors flex items-center justify-center"
                     disabled={isLoading}
                   >
                     {isLoading ? (

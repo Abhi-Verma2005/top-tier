@@ -1,7 +1,7 @@
 // app/api/projects/[id]/route.ts
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-import { Project, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 // Define the Update type for project updates
 type ProjectUpdate = Partial<{
@@ -120,7 +120,6 @@ export async function GET(request: Request) {
 
 // DELETE endpoint for removing a project
 export async function DELETE(
-  request: Request,
   { params }: { params: { id: string } }
 ) {
   try {

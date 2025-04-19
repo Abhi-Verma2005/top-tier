@@ -166,7 +166,6 @@ function Input() {
               onChange={(e) => setInput(e.target.value)}
               onInput={handleInput}
               onFocus={() => setIsFocused(true)}
-              onBlur={() => input.trim() === '' && setIsFocused(false)}
             />
             
             {/* Send button */}

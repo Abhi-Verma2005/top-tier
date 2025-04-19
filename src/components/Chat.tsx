@@ -37,6 +37,7 @@ const ChatComponent: React.FC = () => {
       if(!params.check) return 
       if(!params.check[0]) return 
       localStorage.setItem('githubAccessToken', params.check[1])
+      setToken(params.check[1])
     } else {
       setToken(token)
     }
@@ -59,6 +60,10 @@ const ChatComponent: React.FC = () => {
       toast.error("Failed to copy! ❌");
     }
   };
+
+  useEffect(() => {
+    localStorage.getItem('token')
+  }, [])
 
   return (
     <div className="flex mt-24 flex-col w-full h-[90vh] pb-28 max-w-[70%] mx-auto relative">

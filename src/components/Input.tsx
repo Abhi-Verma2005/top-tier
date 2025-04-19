@@ -1,6 +1,8 @@
 import React, { useRef, useState } from "react";
 import { GitGraphIcon, User, Send, Paperclip } from "lucide-react";
 import useMessageStore from "@/store/messages";
+import toast from "react-hot-toast";
+import { connect } from "./Helpers/Fetch";
 
 function Input() {
   const { input, setInput, sendMessage, isFocused, setIsFocused, setShowModal } = useMessageStore();
@@ -78,7 +80,16 @@ function Input() {
         {/* Toolbar */}
         <div className="flex items-center mt-2 px-1">
           <div className="flex items-center space-x-1">
-            <button onClick={()=>setShowModal(true)} className="p-1 rounded-md text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all">
+            <button onClick={()=>{
+              const token = localStorage.getItem('githubAccessToken')
+              if(token){
+                setShowModal(true)
+              }
+              if(!token){
+                toast.error('Token not found, first connect your github')
+                connect()
+              }
+            }} className="p-1 rounded-md text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all">
               <GitGraphIcon className="size-4" />
             </button>
             <button className="p-1 rounded-md text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all">

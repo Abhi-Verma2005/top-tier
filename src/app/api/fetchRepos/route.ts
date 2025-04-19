@@ -6,8 +6,6 @@ export async function POST(req: Request) {
   const request = await req.json()
 
   const { accessToken } = request
-
-  console.log('accessToken: ', accessToken)
  
   if (!accessToken) {
     return NextResponse.json({ message: "GitHub not connected" }, { status: 235 });
@@ -19,11 +17,17 @@ export async function POST(req: Request) {
     const response = await octokit.request("GET /user/repos", {
       headers: { "X-GitHub-Api-Version": "2022-11-28" },
     });
+
+    const userResponse = await octokit.request("GET /user", {
+      headers: { "X-GitHub-Api-Version": "2022-11-28" },
+    });
+
     const repos = response.data.map((p) => p.name)
 
-    const githubUsername = response.data[0].owner.login
+    const githubUsername = userResponse.data.login
 
     return NextResponse.json({ success: true, repos, githubUsername });
+    
   } catch (error) {
     console.error("❌ GitHub API Error:", error);
     return NextResponse.json(

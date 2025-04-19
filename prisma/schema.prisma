@@ -24,7 +24,6 @@ model User {
   projects                  Project[]
 }
 
-//
  
 model Project {
   id                        String          @id @default(uuid())

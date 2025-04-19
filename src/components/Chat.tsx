@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import ProjectSubmissionForm from './Forms/ProjectForm';
 import { useParams } from 'next/navigation';
 import useTokenStore from '@/store/token';
+import TodaysRoast from './TodaysRoast';
 import ZeroLoader from './ZeroLoader';
 
 const ChatComponent: React.FC = () => {
@@ -42,8 +43,6 @@ const ChatComponent: React.FC = () => {
       setToken(token)
     }
   }, [])
-
-
   
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -67,6 +66,7 @@ const ChatComponent: React.FC = () => {
 
   return (
     <div className="flex mt-24 flex-col w-full h-[90vh] pb-28 max-w-[70%] mx-auto relative">
+      <TodaysRoast />
       <div className="flex-1 p-4 pb-24 overflow-y-auto relative">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-400">
@@ -136,8 +136,7 @@ const ChatComponent: React.FC = () => {
         
         <div ref={messagesEndRef} />
       </div>
-      {isFocused && <ProjectSubmissionForm />}
-      
+      {isFocused && <ProjectSubmissionForm /> }
     </div>
   );
 };

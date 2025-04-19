@@ -1,6 +1,7 @@
 'use client'
 import { Button } from "@/components/ui/button";
 import { Spotlight } from "@/components/ui/spotlight-new";
+import useTokenStore from "@/store/token";
 import { ArrowDown, Code, Search, Star } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -10,7 +11,7 @@ import { useEffect } from "react";
 const Index = () => {
   const { status } = useSession()
   const Router = useRouter()
-  const token = localStorage.getItem("githubAccessToken")
+  const { token } = useTokenStore()
   useEffect(() => {
     if(!token) return 
     if(status === "unauthenticated") return 

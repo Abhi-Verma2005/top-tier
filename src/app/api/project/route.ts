@@ -82,27 +82,8 @@ export async function POST(request: Request) {
     }, {
       status: isNewProject ? 201 : 200
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error handling project:', error);
-    
-    // Handle unique constraint violations
-    if (error.code === 'P2002') {
-      const target = error.meta?.target;
-      let errorMessage = 'A unique constraint would be violated.';
-      
-      if (target?.includes('githubLink')) {
-        errorMessage = 'A project with this GitHub URL already exists';
-      } else if (target?.includes('deployedLink')) {
-        errorMessage = 'A project with this deployed link already exists';
-      } else if (target?.includes('title')) {
-        errorMessage = 'A project with this title already exists';
-      }
-      
-      return NextResponse.json(
-        { error: errorMessage },
-        { status: 409 }
-      );
-    }
     
     return NextResponse.json(
       { error: 'Failed to handle project' },
@@ -121,9 +102,10 @@ export async function GET(request: Request) {
     const projectTitle = searchParams.get('title');
     
     // Build query conditions
-    const whereCondition: any = {};
+    const whereCondition = {};
     
     if (projectTitle) {
+      //@ts-expect-error: no need here
       whereCondition.title = projectTitle;
     }
     
@@ -136,7 +118,7 @@ export async function GET(request: Request) {
       if (!user) {
         return NextResponse.json({ message: "No user found" }, { status: 400 });
       }
-      
+      //@ts-expect-error: no need here
       whereCondition.userId = user.id;
     }
     

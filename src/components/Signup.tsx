@@ -4,7 +4,6 @@ import axios from "axios";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import img2 from '@/images/signup.png'
 import { 
   Card, 
   CardContent, 

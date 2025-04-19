@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect } from "react";
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import ChatComponent from "@/components/Chat";
 import Input from "@/components/Input";
 import { FlipWords } from "@/components/ui/flip-words";

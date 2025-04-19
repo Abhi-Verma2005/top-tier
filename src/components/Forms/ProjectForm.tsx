@@ -165,7 +165,7 @@ const ProjectSubmissionForm: React.FC = () => {
         
       } catch (error) {
         // Project doesn't exist, continue with submission
-        console.log("Project not found in database, proceeding with analysis");
+        console.log("Project not found in database, proceeding with analysis", error);
       }
       
       let formattedMessage = `

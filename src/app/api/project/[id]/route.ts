@@ -1,13 +1,23 @@
 // app/api/projects/[id]/route.ts
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+import { Project, Prisma } from '@prisma/client';
+
+// Define the Update type for project updates
+type ProjectUpdate = Partial<{
+  feedback: string;
+  rating: string;
+  githubLink: string;
+  deployedLink: string;
+  title: string;
+}>;
 
 export async function PUT(
   request: Request,
 ) {
   try {
-    const url = request.url
-    const title = url.split('/')[url.length - 1]
+    const url = request.url;
+    const title = url.split('/')[url.split('/').length - 1];
     
     if (!title) {
       return NextResponse.json(
@@ -29,10 +39,16 @@ export async function PUT(
     }
 
     // Get update data from request body
-    const { feedback, rating, githubUrl, demoUrl, projectType } = await request.json();
+    const { feedback, rating, githubUrl, demoUrl, projectType } = await request.json() as {
+      feedback?: string;
+      rating?: string;
+      githubUrl?: string;
+      demoUrl?: string;
+      projectType?: string;
+    };
     
     // Update only the fields that are provided
-    const updateData: any = {};
+    const updateData: ProjectUpdate = {};
     
     if (feedback !== undefined) updateData.feedback = feedback;
     if (rating !== undefined) updateData.rating = rating;
@@ -47,11 +63,11 @@ export async function PUT(
     });
 
     return NextResponse.json({ success: true, project: updatedProject }, { status: 200 });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error updating project:', error);
     
     // Handle unique constraint violations
-    if (error.code === 'P2002') {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       return NextResponse.json(
         { error: 'A project with this GitHub URL or deployed link already exists' },
         { status: 409 }
@@ -69,8 +85,8 @@ export async function PUT(
 
 export async function GET(request: Request) {
   try {
-    const url = request.url
-    const title = url.split('/')[url.length - 1]
+    const url = request.url;
+    const title = url.split('/')[url.split('/').length - 1];
     
     if (!title) {
       return NextResponse.json(

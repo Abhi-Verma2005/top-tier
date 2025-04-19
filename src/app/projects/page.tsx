@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Code, Github, ExternalLink, Star } from 'lucide-react';
+import { Github, ExternalLink } from 'lucide-react';
 import axios from 'axios';
 
 type User = {

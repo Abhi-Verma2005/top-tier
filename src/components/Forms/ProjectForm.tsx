@@ -57,6 +57,7 @@ const ProjectSubmissionForm: React.FC = () => {
       if(res.status === 235){
         toast.error(res.data.message);
         setIsLoadingRepos(false);
+        connect()
         return;
       }
 

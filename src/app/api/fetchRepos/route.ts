@@ -16,6 +16,8 @@ export async function POST(req: Request) {
 
     const response = await octokit.request("GET /user/repos", {
       headers: { "X-GitHub-Api-Version": "2022-11-28" },
+      per_page: 100, // max allowed
+      page: 1,
     });
 
     const userResponse = await octokit.request("GET /user", {

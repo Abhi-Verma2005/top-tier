@@ -36,10 +36,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 // Updated validation schema with GitHub username
 const signupSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
-  email: z.string().email("Invalid email").refine(
-    (email) => email.endsWith("@nst.rishihood.edu.in"),
-    "Must use college email"
-  ),
+  email: z.string().email("Invalid email"),
   password: z.string()
     .min(8, "Password must be at least 8 characters")
     .regex(/[A-Z]/, "Must contain at least one uppercase letter")

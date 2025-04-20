@@ -25,7 +25,7 @@ model Project {
   id                        String          @id @default(uuid())
   title                     String          @unique
   githubLink                String          @unique
-  deployedLink              String          @unique
+  deployedLink              String          
   feedback                  String?
   rating                    String?            
   userId                    String          

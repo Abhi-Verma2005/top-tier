@@ -1,9 +1,10 @@
 import prisma from "@/lib/prisma";
-import { AuthOptions, Session } from "next-auth";
+import { Account, AuthOptions, Session } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import GitHubProvider from "next-auth/providers/github";
 import bcrypt from "bcrypt";
+import { JWT } from "next-auth/jwt";
 
 const githubClientId = process.env.GITHUB_CLIENT_ID || "";
 const githubClientSecret = process.env.GITHUB_CLIENT_SECRET || "";
@@ -42,9 +43,13 @@ export const authOptions: AuthOptions = {
       },
     }),
     GitHubProvider({
-      clientId: githubClientId,
-      clientSecret: githubClientSecret,
-      authorization: { params: { scope: "repo" } },
+        clientId: githubClientId,
+        clientSecret: githubClientSecret,
+        authorization: {
+          params: {
+            scope: "read:user user:email repo",
+          },
+        },
     }),
   ],
   pages: {
@@ -53,33 +58,60 @@ export const authOptions: AuthOptions = {
   callbacks: {
     async signIn({ user, account }) {
 
-      if (account?.provider === "google") {
+      // if (account?.provider === "google") {
+      //   try {
+      //     const existingUser = await prisma.user.findUnique({
+      //       where: { email: user.email! },
+      //     });
+
+      //     if (!existingUser?.isComplete) {
+      //       console.log("Redirecting user to complete signup...");
+      //       return `/auth/signup?email=${encodeURIComponent(user.email!)}`;
+      //     }
+
+      //     console.log("User successfully signed in.");
+      //     return true;
+      //   } catch (error) {
+      //     console.error("Error during Google sign-in:", error);
+      //     return false;
+      //   }
+      // }
+
+      if(account?.provider === 'github'){
         try {
+        if (!user.email) {
+            console.error("GitHub did not return an email for the user.");
+            return false;
+            }
           const existingUser = await prisma.user.findUnique({
             where: { email: user.email! },
           });
 
           if (!existingUser?.isComplete) {
-            console.log("Redirecting user to complete signup...");
+
             return `/auth/signup?email=${encodeURIComponent(user.email!)}`;
           }
 
-          console.log("User successfully signed in.");
           return true;
         } catch (error) {
-          console.error("Error during Google sign-in:", error);
+          console.error("Error during Github sign-in:", error);
           return false;
         }
-      }
+      } 
 
       return true;
     },
 
 
+    async jwt({ token, account }: { token: JWT; account?: Account | null }) {
+        if (account?.provider === "github") {
+          token.githubAccessToken = account.access_token;
+        }
+        return token;
+    },
 
-    async session({ session }: { session: Session }) {
+    async session({ session, token }: { session: Session, token: JWT }) {
     
-
       if (session.user) {
         const dbUser = await prisma.user.findUnique({
           where: { email: session.user.email || "" },
@@ -92,12 +124,15 @@ export const authOptions: AuthOptions = {
               ...session.user,
               id: dbUser.id,
               isComplete: dbUser.isComplete,
+              githubAccessToken: token.githubAccessToken
             },
           };
         }
       }
       return session;
     },
+
+    
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

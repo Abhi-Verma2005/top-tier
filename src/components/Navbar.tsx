@@ -48,7 +48,7 @@ const Navbar = () => {
   }, [status]);
   
   useEffect(() => {
-    const accessToken = localStorage.getItem('githubAccessToken')
+    const accessToken = session?.user.githubAccessToken
     if(accessToken){
       setToken(accessToken)
     }
@@ -143,17 +143,6 @@ const Navbar = () => {
         </div>
       ) : (
         <div className="flex items-center space-x-2">
-          <Link 
-            href={!token ? `/chat/false` : `/chat/true/${token}`}
-          >
-            <Button 
-              variant="outline" 
-              className="border-white/10 hover:bg-white/5 hover:border-white/20 flex items-center gap-2 px-3 text-neutral-200"
-            >
-              <MessageCircle className="h-4 w-4" />
-              <span>Chat</span>
-            </Button>
-          </Link>
           
           <Button 
             variant="default" 

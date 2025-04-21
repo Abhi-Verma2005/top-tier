@@ -10,7 +10,6 @@ import useMessageStore, { Message } from '@/store/messages';
 import { Octokit } from '@octokit/core';
 import { getRelevantFoldersFromAi } from '@/lib/rateFunctions';
 import { getFile } from '@/serverActions/fetch';
-import { connect } from '../Helpers/Fetch';
 import { useSession } from 'next-auth/react';
 
 interface ProjectDetails {
@@ -51,13 +50,12 @@ const ProjectSubmissionForm: React.FC = () => {
     try {
       setIsLoadingRepos(true);    
       const res = await axios.post('/api/fetchRepos', {
-        accessToken: token
+        accessToken: session?.user.githubAccessToken
       });
       
       if(res.status === 235){
         toast.error(res.data.message);
         setIsLoadingRepos(false);
-        connect()
         return;
       }
 
@@ -73,8 +71,6 @@ const ProjectSubmissionForm: React.FC = () => {
     } catch (error) {
       console.error('Error in getRepos', error);
       toast.error('Token Expired, Reconnect Github');
-      localStorage.removeItem('githubAccessToken')
-      connect();
       setIsLoadingRepos(false);
     }
   };

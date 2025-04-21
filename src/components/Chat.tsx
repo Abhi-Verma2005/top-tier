@@ -9,6 +9,7 @@ import ProjectSubmissionForm from './Forms/ProjectForm';
 import { useParams } from 'next/navigation';
 import useTokenStore from '@/store/token';
 import ZeroLoader from './ZeroLoader';
+import { useSession } from 'next-auth/react';
 
 const ChatComponent: React.FC = () => {
   const { 
@@ -17,6 +18,7 @@ const ChatComponent: React.FC = () => {
     isFocused,
   } = useMessageStore();
   const { setToken } = useTokenStore()
+  const { data:session } = useSession()
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const params = useParams()
@@ -30,18 +32,7 @@ const ChatComponent: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
   };
 
-  useEffect(() => {
-    const token = localStorage.getItem('githubAccessToken')
-    if(!token){
-      if(!params) return 
-      if(!params.check) return 
-      if(!params.check[0]) return 
-      localStorage.setItem('githubAccessToken', params.check[1])
-      setToken(params.check[1])
-    } else {
-      setToken(token)
-    }
-  }, [])
+ 
   
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -59,9 +50,6 @@ const ChatComponent: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    localStorage.getItem('token')
-  }, [])
 
   return (
     <div className="flex mt-24 flex-col w-full h-[90vh] pb-28 max-w-[70%] mx-auto relative">

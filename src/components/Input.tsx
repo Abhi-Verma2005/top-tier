@@ -2,10 +2,11 @@ import React, { useRef, useState, useEffect } from "react";
 import { GitGraphIcon, Send } from "lucide-react";
 import useMessageStore from "@/store/messages";
 import toast from "react-hot-toast";
-import { connect } from "./Helpers/Fetch";
 import Image from 'next/image';
 import gemini from '@/images/zero.png';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import useTokenStore from "@/store/token";
+import { useSession } from "next-auth/react";
 
 // Define the roast response type
 interface RoastResponse {
@@ -20,6 +21,7 @@ function Input() {
   
   // Roast state
   const [roasts, setRoasts] = useState<string[]>([]);
+  const { data: session } = useSession()
   const [currentRoastIndex, setCurrentRoastIndex] = useState(0);
   const [isLoadingRoast, setIsLoadingRoast] = useState(true);
   
@@ -187,13 +189,12 @@ function Input() {
           <div className="flex items-center space-x-1">
             <button 
               onClick={() => {
-                const token = localStorage.getItem('githubAccessToken');
+                const token = session?.user.githubAccessToken
                 if(token) {
                   setShowModal(true);
                 }
                 if(!token) {
-                  toast.error('Token not found, first connect your github');
-                  connect();
+                  toast.error('Token not found, try re logging in');
                 }
               }} 
               className="p-1 flex justify-center items-center rounded-md text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all"

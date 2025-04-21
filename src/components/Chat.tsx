@@ -17,11 +17,8 @@ const ChatComponent: React.FC = () => {
     isLoading,
     isFocused,
   } = useMessageStore();
-  const { setToken } = useTokenStore()
-  const { data:session } = useSession()
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const params = useParams()
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   
   useEffect(() => {

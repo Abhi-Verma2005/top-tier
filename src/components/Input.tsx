@@ -5,7 +5,6 @@ import toast from "react-hot-toast";
 import Image from 'next/image';
 import gemini from '@/images/zero.png';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import useTokenStore from "@/store/token";
 import { useSession } from "next-auth/react";
 
 // Define the roast response type

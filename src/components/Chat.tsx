@@ -6,10 +6,7 @@ import gemini from '@/images/zero.png';
 import useMessageStore from '@/store/messages';
 import toast from 'react-hot-toast';
 import ProjectSubmissionForm from './Forms/ProjectForm';
-import { useParams } from 'next/navigation';
-import useTokenStore from '@/store/token';
 import ZeroLoader from './ZeroLoader';
-import { useSession } from 'next-auth/react';
 
 const ChatComponent: React.FC = () => {
   const { 
